@@ -575,36 +575,66 @@ const SUPABASE_KEY = "";   // 例: "eyJhbGciOi..."
    create policy "yk anon all" on yk_players for all to anon using (true) with check (true);
 */
 
-/* ================= BGM(3場面切替) ================= */
-const BGM_SRC={top:"bgm-top.mp3",battle:"bgm-battle.mp3",menu:"bgm-menu.mp3"};
+/* ================= BGM(3場面切替・Web Audioで音量制御) ================= */
+const BGM_SRC={top:"bgm-top.mp3",battle:"bgm-battle.mp3",menu:"bgm-menu.mp3",win:"bgm-win.mp3"};
 let bgmVol=(function(){try{const v=localStorage.getItem("yk_bgmvol");return v===null?0.4:+v}catch(e){return 0.4}})();
 let sfxVol=(function(){try{const v=localStorage.getItem("yk_sfxvol");return v===null?0.7:+v}catch(e){return 0.7}})();
 let bgmMuted=(function(){try{return localStorage.getItem("yk_bgm")==="0"}catch(e){return false}})();
-let bgmAudio=null,bgmCurrent=null,bgmWantScene=null;
+let bgmAudio=null,bgmCurrent=null,bgmWantScene=null,bgmGain=null,bgmSrcNode=null;
 function ensureBgm(){
   if(bgmAudio)return bgmAudio;
-  bgmAudio=new Audio();bgmAudio.loop=true;bgmAudio.preload="auto";bgmAudio.volume=bgmVol;
-  bgmAudio.addEventListener("error",()=>{}); // ファイルが無くても無視
+  bgmAudio=new Audio();bgmAudio.loop=true;bgmAudio.preload="auto";
+  // 同一オリジン(GitHub Pages)のmp3ではcrossOriginを付けない
+  // → iOSでcreateMediaElementSourceが無音になる不具合を回避
+  bgmAudio.volume=1; // 実際の音量はGainNodeで制御(iOSは.volumeが効かないため)
+  bgmAudio.addEventListener("error",()=>{});
+  connectBgmGraph();
   return bgmAudio;
+}
+function connectBgmGraph(){
+  if(bgmSrcNode||!bgmAudio)return; // 既に接続済み
+  try{
+    const c=ac();
+    if(c){
+      bgmSrcNode=c.createMediaElementSource(bgmAudio);
+      bgmGain=c.createGain();
+      bgmGain.gain.value=bgmMuted?0:bgmVol;
+      bgmSrcNode.connect(bgmGain).connect(c.destination);
+    }
+  }catch(e){}
 }
 function playBgm(scene){
   bgmWantScene=scene;
   if(bgmMuted)return;
   const a=ensureBgm();
+  const c=ac(); if(c&&c.state==="suspended")c.resume(); // iOSでコンテキスト再開
+  connectBgmGraph();                                    // まだ繋がっていなければ接続
+  if(bgmGain)bgmGain.gain.value=bgmVol;
+  a.loop=(scene!=="win"); // 勝利ジングルはループしない、それ以外はループ
   if(bgmCurrent===scene&&!a.paused)return;
   bgmCurrent=scene;
   if(a.src.indexOf(BGM_SRC[scene])<0)a.src=BGM_SRC[scene];
-  a.volume=bgmVol;
-  const pr=a.play();if(pr&&pr.catch)pr.catch(()=>{}); // 自動再生ブロック対策(初回タップで開始)
+  try{a.currentTime=0}catch(e){}
+  const pr=a.play();if(pr&&pr.catch)pr.catch(()=>{});
+}
+function playWinBgm(){ // 勝利時:バトルBGMを止めて勝利ジングルを頭から再生
+  if(bgmMuted)return;
+  bgmCurrent=null; // 強制的に再生し直す
+  playBgm("win");
 }
 function setBgmScene(scene){ // 画面遷移から呼ぶ
   if(scene!==bgmWantScene)playBgm(scene);
 }
 function stopBgm(){if(bgmAudio){bgmAudio.pause()}bgmCurrent=null}
-function applyBgmVol(){if(bgmAudio)bgmAudio.volume=bgmVol;try{localStorage.setItem("yk_bgmvol",bgmVol)}catch(e){}}
+function applyBgmVol(){
+  if(bgmGain){const c=ac();bgmGain.gain.value=bgmMuted?0:bgmVol}
+  else if(bgmAudio){bgmAudio.volume=bgmMuted?0:bgmVol} // フォールバック
+  try{localStorage.setItem("yk_bgmvol",bgmVol)}catch(e){}
+}
 function applySfxVol(){try{localStorage.setItem("yk_sfxvol",sfxVol)}catch(e){}}
 function toggleBgm(){
   bgmMuted=!bgmMuted;try{localStorage.setItem("yk_bgm",bgmMuted?"0":"1")}catch(e){}
+  if(bgmGain)bgmGain.gain.value=bgmMuted?0:bgmVol;
   if(bgmMuted)stopBgm();else if(bgmWantScene)playBgm(bgmWantScene);
   updateAudioUI();
 }
@@ -1251,10 +1281,10 @@ function closeGetModal(){document.getElementById("modal-get").classList.remove("
 /* ================= 画面 ================= */
 function go(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));document.getElementById(id).classList.add("active");window.scrollTo(0,0);
   const pop=document.getElementById("audio-pop");if(pop)pop.style.display="none"; // 音量ポップは閉じる
-  // 画面に応じてBGMを切替
+  // 画面に応じてBGMを切替(結果画面は勝利ジングル等を継続させるため切替えない)
   if(id==="scr-home")setBgmScene("top");
   else if(id==="scr-battle")setBgmScene("battle");
-  else if(id!=="scr-auth")setBgmScene("menu");
+  else if(id!=="scr-auth"&&id!=="scr-result")setBgmScene("menu");
   updateAudioUI(); // 遷移先のスライダー表示を現在値に同期
 }
 function effText(eff){const p=[];if(eff.atk)p.push("攻撃+"+eff.atk);if(eff.def)p.push("防御+"+eff.def);if(eff.hp)p.push("HP+"+eff.hp);return p.length?p.join(" / "):"ボーナスなし"}
@@ -1848,6 +1878,7 @@ function finishMatch(iWin){
   if(iWin)save.wins++;else save.losses++;persist();
   if(battleMode==="online")netSend({t:"end"});
   play(iWin?"win":"lose");
+  if(iWin)playWinBgm(); // 勝利BGMに切り替え(結果画面まで流れる)
   setTimeout(()=>{
     const rewards=[gachaOne()]; // 戦い抜いた人は必ず妖怪カード1枚
     if(iWin){
