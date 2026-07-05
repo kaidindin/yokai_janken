@@ -320,12 +320,22 @@ input.txt{width:100%;background:#1a1330;border:2px solid #56417f;border-radius:1
   font-size:13px;border-radius:10px;padding:8px 10px;cursor:pointer;white-space:nowrap;min-width:96px;text-align:left}
 .sndtoggle.off{opacity:.45;text-decoration:line-through}
 .sndtoggle rt{font-size:.5em;color:#ffe0b0;font-weight:600}
-.volslider{flex:1;-webkit-appearance:none;appearance:none;height:8px;border-radius:8px;
-  background:linear-gradient(90deg,var(--onibi),var(--murasaki));outline:none}
-.volslider::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;
-  background:var(--gold1);border:2px solid #7a5a00;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.4)}
-.volslider::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--gold1);border:2px solid #7a5a00;cursor:pointer}
-.volnum{font-size:13px;font-weight:800;color:var(--gold1);min-width:28px;text-align:right}
+.volslider{flex:1;-webkit-appearance:none;appearance:none;height:14px;border-radius:8px;
+  background:linear-gradient(90deg,var(--onibi),var(--murasaki));outline:none;
+  touch-action:none;cursor:pointer;padding:0;margin:6px 0}
+.volslider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:30px;height:30px;border-radius:50%;
+  background:var(--gold1);border:3px solid #7a5a00;cursor:pointer;box-shadow:0 2px 5px rgba(0,0,0,.5)}
+.volslider::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:var(--gold1);border:3px solid #7a5a00;cursor:pointer}
+.volslider::-webkit-slider-runnable-track{height:14px;border-radius:8px}
+.volslider::-moz-range-track{height:14px;border-radius:8px}
+.volnum{font-size:15px;font-weight:800;color:var(--gold1);min-width:32px;text-align:right}
+.audiobtn{position:fixed;top:10px;right:10px;z-index:40;width:44px;height:44px;border-radius:50%;
+  background:var(--sumi2);border:2px solid #56417f;color:var(--washi);font-size:20px;cursor:pointer;
+  box-shadow:0 2px 6px rgba(0,0,0,.5)}
+.audiobtn:active{transform:scale(.92)}
+.audiopop{position:fixed;top:60px;right:10px;z-index:40;width:250px;background:var(--sumi2);
+  border:2px solid #56417f;border-radius:14px;padding:10px 12px;box-shadow:0 6px 20px rgba(0,0,0,.6)}
+.audiopop .soundrow{margin:8px 0}
 .statusline{color:var(--onibi);font-size:13px;margin-top:10px;min-height:18px;text-align:center}
 </style>
 </head>
@@ -419,6 +429,19 @@ input.txt{width:100%;background:#1a1330;border:2px solid #56417f;border-radius:1
 
   <!-- ===== バトル ===== -->
   <div class="screen" id="scr-battle">
+    <button class="audiobtn" onclick="toggleAudioPop()" aria-label="音量">🔊</button>
+    <div id="audio-pop" class="audiopop" style="display:none">
+      <div class="soundrow">
+        <button class="sndtoggle" id="bgm-toggle2" onclick="toggleBgm()">🎵 BGM</button>
+        <input type="range" min="0" max="100" value="40" id="bgm-slider2" class="volslider" oninput="onBgmSlider(this.value)">
+        <span class="volnum" id="bgm-num2">40</span>
+      </div>
+      <div class="soundrow">
+        <button class="sndtoggle" id="sfx-toggle2" onclick="toggleSfx()">🔊 <ruby>効果音<rt>こうかおん</rt></ruby></button>
+        <input type="range" min="0" max="100" value="70" id="sfx-slider2" class="volslider" oninput="onSfxSlider(this.value)">
+        <span class="volnum" id="sfx-num2">70</span>
+      </div>
+    </div>
     <div class="team-dots" id="enemy-dots"></div>
     <div class="say" id="enemy-say" style="display:none"></div>
     <div class="fighter enemy" id="f-enemy">
@@ -631,19 +654,30 @@ const SFX={
 function play(name){if(!sfxOn||sfxVol<=0)return;try{SFX[name]&&SFX[name]()}catch(e){}}
 function toggleSfx(){sfxOn=!sfxOn;try{localStorage.setItem("yk_sfx",sfxOn?"1":"0")}catch(e){}
   updateAudioUI();if(sfxOn)play("tap")}
-function onBgmSlider(v){bgmVol=v/100;applyBgmVol();document.getElementById("bgm-num").textContent=v;
+function onBgmSlider(v){bgmVol=(+v)/100;applyBgmVol();
   if(bgmVol>0&&bgmMuted){bgmMuted=false;try{localStorage.setItem("yk_bgm","1")}catch(e){}if(bgmWantScene)playBgm(bgmWantScene)}
   updateAudioUI()}
-function onSfxSlider(v){sfxVol=v/100;applySfxVol();document.getElementById("sfx-num").textContent=v;
+function onSfxSlider(v){sfxVol=(+v)/100;applySfxVol();
   if(sfxVol>0&&!sfxOn){sfxOn=true;try{localStorage.setItem("yk_sfx","1")}catch(e){}}
   updateAudioUI()}
+function toggleAudioPop(){
+  const p=document.getElementById("audio-pop");if(!p)return;
+  p.style.display=p.style.display==="none"?"block":"none";
+  play("tap");updateAudioUI();
+}
+function setEls(ids,fn){ids.forEach(id=>{const el=document.getElementById(id);if(el)fn(el)})}
 function updateAudioUI(){
-  const bt=document.getElementById("bgm-toggle"),st=document.getElementById("sfx-toggle");
-  if(bt)bt.classList.toggle("off",bgmMuted||bgmVol<=0);
-  if(st)st.classList.toggle("off",!sfxOn||sfxVol<=0);
-  const bs=document.getElementById("bgm-slider"),ss=document.getElementById("sfx-slider");
-  if(bs){bs.value=Math.round(bgmVol*100);document.getElementById("bgm-num").textContent=Math.round(bgmVol*100)}
-  if(ss){ss.value=Math.round(sfxVol*100);document.getElementById("sfx-num").textContent=Math.round(sfxVol*100)}
+  const bgmPct=Math.round(bgmVol*100), sfxPct=Math.round(sfxVol*100);
+  const bgmOff=bgmMuted||bgmVol<=0, sfxOff=!sfxOn||sfxVol<=0;
+  // トグルボタン(ホーム・バトル両方)
+  setEls(["bgm-toggle","bgm-toggle2"],el=>el.classList.toggle("off",bgmOff));
+  setEls(["sfx-toggle","sfx-toggle2"],el=>el.classList.toggle("off",sfxOff));
+  // スライダー値(ホーム・バトル両方)
+  setEls(["bgm-slider","bgm-slider2"],el=>el.value=bgmPct);
+  setEls(["sfx-slider","sfx-slider2"],el=>el.value=sfxPct);
+  // 数値表示(ホーム・バトル両方)
+  setEls(["bgm-num","bgm-num2"],el=>el.textContent=bgmPct);
+  setEls(["sfx-num","sfx-num2"],el=>el.textContent=sfxPct);
 }
 
 /* ================= データ ================= */
@@ -1216,10 +1250,12 @@ function closeGetModal(){document.getElementById("modal-get").classList.remove("
 
 /* ================= 画面 ================= */
 function go(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));document.getElementById(id).classList.add("active");window.scrollTo(0,0);
+  const pop=document.getElementById("audio-pop");if(pop)pop.style.display="none"; // 音量ポップは閉じる
   // 画面に応じてBGMを切替
   if(id==="scr-home")setBgmScene("top");
   else if(id==="scr-battle")setBgmScene("battle");
   else if(id!=="scr-auth")setBgmScene("menu");
+  updateAudioUI(); // 遷移先のスライダー表示を現在値に同期
 }
 function effText(eff){const p=[];if(eff.atk)p.push("攻撃+"+eff.atk);if(eff.def)p.push("防御+"+eff.def);if(eff.hp)p.push("HP+"+eff.hp);return p.length?p.join(" / "):"ボーナスなし"}
 function wazaDescText(w){return w.sp?w.spText:effText(w.eff)}
