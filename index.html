@@ -1,0 +1,2090 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0d0a16">
+<meta name="supported-color-schemes" content="dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<title>妖怪じゃんけん大戦</title>
+<meta name="description" content="47都道府県の妖怪+海外モンスターが集結!キャラカードと技カードでじゃんけんバトル。CPU対戦・オンライン対戦・コレクション機能つき。">
+<style>
+:root{
+  color-scheme: dark only;
+  --sumi:#0d0a16;      /* ほぼ黒の墨 */
+  --sumi2:#1c1630;
+  --sumi3:#2a2047;
+  --shu:#ff6b4a;       /* 提灯朱 */
+  --onibi:#5eead4;     /* 鬼火 */
+  --murasaki:#b478ff;  /* 妖しの紫 */
+  --washi:#fdf6e8;     /* 和紙 */
+  --gold1:#ffd94a; --gold2:#c8901b;
+  --cN:#a9adc4; --cR:#5a9bff; --cSR:#c471ff; --cMR:#ffab1f;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{background:#0d0a16}
+html,body{height:100%}
+body{
+  background:#0d0a16;
+  color:var(--washi);
+  font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN",-apple-system,"Hiragino Kaku Gothic ProN",sans-serif;font-weight:500;
+  background-image:
+    radial-gradient(circle at 15% 8%, rgba(94,234,212,.09), transparent 38%),
+    radial-gradient(circle at 85% 92%, rgba(180,120,255,.13), transparent 42%),
+    radial-gradient(circle at 50% 50%, rgba(255,107,74,.05), transparent 60%);
+  background-attachment:fixed;
+  background-color:#0d0a16;
+  min-height:100%;
+  overscroll-behavior:none;
+  -webkit-text-size-adjust:100%;
+}
+.mincho{font-family:"Mochiy Pop One","Zen Maru Gothic","Hiragino Maru Gothic ProN",sans-serif;font-weight:400}
+#app{max-width:520px;margin:0 auto;padding:14px 14px 60px;min-height:100vh;background:#0d0a16;
+  background-image:radial-gradient(circle at 50% 0%, rgba(180,120,255,.10), transparent 55%)}
+.screen{display:none}
+.screen.active{display:block;animation:fadein .25s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+
+/* ---------- タイトル ---------- */
+.title-wrap{text-align:center;padding:30px 0 10px;position:relative}
+.hitodama{position:absolute;font-size:26px;opacity:.9;animation:float 4s ease-in-out infinite;
+  filter:drop-shadow(0 0 8px rgba(94,234,212,.7))}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+h1.game-title{font-size:40px;letter-spacing:.04em;line-height:1.12;color:var(--gold1);
+  text-shadow:0 2px 0 #7a2e1f, 0 0 18px rgba(255,217,74,.5), 3px 3px 0 rgba(0,0,0,.25);
+  -webkit-text-stroke:1px #7a2e1f;}
+.subtitle{color:var(--onibi);font-size:15px;letter-spacing:.22em;margin-top:8px;font-weight:800;
+  text-shadow:0 0 10px rgba(94,234,212,.4)}
+.byline{color:#d9cdf5;font-size:12px;margin-top:10px;line-height:1.6}
+h1.game-title rt{font-size:.32em;color:var(--onibi);-webkit-text-stroke:0;text-shadow:none;font-weight:700}
+.subtitle rt{font-size:.5em;color:#bfeee5;font-weight:600}
+.byline rt{font-size:.55em;color:#b9a9e0;font-weight:600}
+.btn rt{font-size:.5em;color:#ffe0b0;font-weight:600}
+.btn.primary rt{color:#fff3e0}
+
+/* ---------- ボタン ---------- */
+.btn{display:block;width:100%;border:none;cursor:pointer;
+  font-family:inherit;font-weight:800;color:var(--washi);
+  background:linear-gradient(160deg,var(--sumi3),var(--sumi2));border:2px solid #56417f;border-radius:16px;
+  padding:16px;font-size:17px;margin-top:12px;text-align:left;position:relative;
+  box-shadow:0 3px 0 rgba(0,0,0,.28);transition:transform .08s;}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.28)}
+.btn .em{font-size:22px;margin-right:10px}
+.btn.primary{background:linear-gradient(135deg,#ff8a4a,var(--shu));border-color:#ffb08f;color:#fff;
+  text-shadow:0 1px 2px rgba(0,0,0,.3)}
+.btn.small{width:auto;display:inline-block;padding:10px 16px;font-size:14px;margin-top:8px;border-radius:12px;text-align:center}
+.btn.ghost{background:rgba(255,255,255,.06);box-shadow:none;border-color:#56417f}
+.btn:disabled{opacity:.4}
+.backbar{margin-bottom:10px}
+.backbtn{background:rgba(94,234,212,.12);border:2px solid #3f7d70;color:var(--onibi);font-size:15px;font-weight:800;
+  cursor:pointer;font-family:inherit;padding:8px 14px;border-radius:12px}
+/* 見出し:確実に読める塗り+左に鬼アイコン風の帯 */
+h2.sect{font-size:21px;margin:16px 0 6px;letter-spacing:.04em;color:var(--washi);font-weight:900;
+  padding:6px 12px;border-left:6px solid var(--shu);
+  background:linear-gradient(90deg,rgba(255,107,74,.22),transparent);border-radius:0 10px 10px 0;
+  text-shadow:0 1px 3px rgba(0,0,0,.4)}
+.note{color:#e7defb;font-size:13px;line-height:1.7;margin-top:6px}
+.note b{color:#fff}
+.note rt,.sect rt{font-size:.5em;color:#a9d8ff;font-weight:600;letter-spacing:0}
+.sect rt{color:#ffd9c0}
+
+/* ---------- カード ---------- */
+.card{
+  background:linear-gradient(160deg,#fbf4e4,#e8dcc2);
+  color:#241f18;border-radius:12px;padding:10px 10px 8px;position:relative;
+  border:3px solid var(--cN);box-shadow:0 4px 14px rgba(0,0,0,.45);
+  width:150px;user-select:none;-webkit-user-select:none;}
+.card .art{padding:2px 4px 0}
+.card .art svg{width:100%;height:auto;display:block}
+.card .nm{font-weight:800;font-size:14px;text-align:center;line-height:1.25;min-height:38px;display:flex;align-items:center;justify-content:center}
+.card .nm rt{font-size:8px;font-weight:600;color:#8a7d66;letter-spacing:0}
+.card.mini .nm rt{font-size:6px}
+.card .pref{font-size:10px;text-align:center;color:#6b6152;letter-spacing:.15em}
+.card .stats{display:flex;justify-content:space-around;font-size:11px;margin-top:6px;background:rgba(0,0,0,.06);border-radius:8px;padding:4px 2px}
+.card .stats b{display:block;font-size:13px}
+.card .wstats{display:flex;flex-wrap:wrap;gap:3px;justify-content:center}
+.card .wstats span{display:inline;background:rgba(0,0,0,.08);border-radius:6px;padding:1px 5px;font-size:10px}
+.card .wstats b{display:inline;font-size:11px}
+.card.wcard .pref{color:#7a6f5c}
+.card .rar{position:absolute;top:6px;left:8px;font-size:10px;font-weight:900;letter-spacing:.05em}
+.card .fav{position:absolute;top:4px;right:6px;font-size:18px;line-height:0}
+.card.rN{border-color:var(--cN)} .card.rN .rar{color:var(--cN)}
+.card.rR{border-color:var(--cR)} .card.rR .rar{color:var(--cR)}
+.card.rSR{border-color:var(--cSR)} .card.rSR .rar{color:var(--cSR)}
+.card.rMR{border-color:var(--cMR);box-shadow:0 0 18px rgba(255,178,0,.55)} .card.rMR .rar{color:#b17500}
+.card.gold{border-image:linear-gradient(135deg,var(--gold1),var(--gold2),var(--gold1)) 1;
+  background:linear-gradient(160deg,#fff6d8,#f3dfa0);box-shadow:0 0 20px rgba(247,215,116,.55)}
+.goldbadge{position:absolute;bottom:6px;right:6px;background:linear-gradient(135deg,var(--gold2),var(--gold1));
+  color:#3d2b00;font-size:9px;font-weight:900;padding:2px 6px;border-radius:6px;letter-spacing:.1em}
+.card.mini{width:96px;padding:6px 5px 5px}
+.card.mini .art{padding:0 2px}
+.card.mini .nm{font-size:10px;min-height:26px}
+.card.mini .stats{font-size:8px;padding:2px 0}
+.card.mini .stats b{font-size:10px}
+.card.mini .rar{font-size:8px;top:4px;left:5px}
+.card.mini .fav{font-size:12px}
+.card.locked{filter:grayscale(1) brightness(.55)}
+.card.locked .art svg{filter:brightness(0);opacity:.5}
+.card.sel{outline:3px solid var(--onibi);outline-offset:2px}
+.cardgrid{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:12px}
+.owncount{position:absolute;bottom:-8px;left:-8px;background:var(--shu);color:#fff;border-radius:999px;
+  font-size:10px;font-weight:900;padding:3px 7px;border:2px solid var(--sumi);box-shadow:0 2px 6px rgba(0,0,0,.5);z-index:2}
+.detail-desc{background:var(--sumi2);border:1px solid #39355a;border-radius:12px;padding:12px 14px;
+  font-size:13px;line-height:1.75;margin:12px 0;text-align:left;color:var(--washi)}
+
+/* ---------- 技カード ---------- */
+.waza{background:var(--sumi2);border:1px solid #39355a;border-radius:12px;padding:10px 12px;margin-top:8px;
+  display:flex;align-items:center;gap:10px;cursor:pointer}
+.waza .h{font-size:24px}
+.waza .wn{font-weight:800;font-size:14px}
+.waza .we{font-size:11px;color:var(--onibi)}
+.waza.sel{border-color:var(--onibi);background:#1c3a33}
+.waza.locked{opacity:.35;pointer-events:none}
+
+/* ---------- バトル ---------- */
+.fighter{background:var(--sumi2);border:1px solid #39355a;border-radius:16px;padding:10px;display:flex;gap:12px;align-items:center;margin-top:10px}
+.fighter .info{flex:1;min-width:0}
+.fighter .fname{font-weight:900;font-size:15px}
+.fighter .hpbar{height:14px;background:#0c0b14;border-radius:8px;margin-top:6px;overflow:hidden;border:1px solid #39355a}
+.fighter .hpfill{height:100%;background:linear-gradient(90deg,var(--onibi),#3aa87f);transition:width .5s ease;border-radius:8px}
+.fighter .hpfill.low{background:linear-gradient(90deg,#ff8a5c,var(--shu))}
+.fighter .hptxt{font-size:12px;margin-top:3px;color:#c9c2e0}
+.fighter.enemy .hpfill{background:linear-gradient(90deg,#ff8ab0,#d84a6a)}
+/* 妖力ゲージ */
+.spbar{height:7px;background:#0c0b14;border-radius:6px;margin-top:5px;overflow:hidden;border:1px solid #39355a}
+.spfill{height:100%;width:0;background:linear-gradient(90deg,#c05aff,#f7d774);transition:width .4s ease;border-radius:6px}
+.spfill.full{animation:spglow 1s ease-in-out infinite}
+@keyframes spglow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.6)}}
+.spbtn{background:linear-gradient(135deg,#7a2fb0,#c05aff)!important;border-color:#f7d774!important;text-align:center;
+  animation:spglow 1.1s ease-in-out infinite}
+/* チーム残数ドット */
+.team-dots{display:flex;gap:6px;justify-content:center;margin:6px 0}
+.team-dots .dot{width:26px;height:26px;border-radius:8px;border:2px solid #39355a;background:var(--sumi2);
+  display:flex;align-items:center;justify-content:center;font-size:13px;opacity:.55}
+.team-dots .dot.alive{opacity:1;border-color:var(--onibi)}
+.team-dots .dot.active{border-color:var(--gold1);box-shadow:0 0 8px rgba(247,215,116,.6)}
+.team-dots .dot.dead{opacity:.3;filter:grayscale(1)}
+/* 編成スロット */
+.team-slots{display:flex;gap:8px;justify-content:center;margin:12px 0 6px;align-items:flex-start}
+.team-slot{width:92px;min-height:132px;border:2px dashed #4a4570;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  color:#6a6490;font-size:12px;text-align:center;padding:4px;cursor:pointer;background:var(--sumi2);overflow:hidden;box-sizing:border-box}
+.team-slot.filled{border-style:solid;border-color:var(--onibi);padding:3px;height:auto;min-height:0;background:transparent}
+.team-slot.filled .card.mini{width:100%!important;margin:0}
+.team-slot .slotno{font-weight:900}
+.team-bonus{text-align:center;font-size:13px;color:var(--gold1);font-weight:800;min-height:20px;margin-bottom:4px}
+.card.picked{outline:3px solid var(--gold1);outline-offset:2px}
+/* 合成 */
+.fuse-row{display:flex;align-items:center;gap:10px;background:var(--sumi2);border:1px solid #39355a;border-radius:12px;padding:10px;margin-top:10px}
+.fuse-row .fuse-info{flex:1;min-width:0}
+.fuse-row .fuse-info b{font-size:14px}
+.fuse-btn{background:linear-gradient(135deg,#a8321f,var(--shu));border:none;color:#fff;font-weight:800;
+  border-radius:10px;padding:9px 12px;font-family:inherit;cursor:pointer;font-size:13px;white-space:nowrap}
+.fuse-btn:disabled{opacity:.35;cursor:default}
+.vsband{text-align:center;font-size:22px;font-weight:900;color:var(--shu);letter-spacing:.4em;margin-top:8px}
+.handbtns{display:flex;gap:10px;margin-top:14px}
+.handbtn{flex:1;background:var(--sumi2);border:2px solid #39355a;border-radius:16px;padding:12px 4px;cursor:pointer;color:var(--washi);font-family:inherit}
+.handbtn .he{display:flex;justify-content:center;align-items:center;height:50px}
+.handbtn .he .handsvg{filter:drop-shadow(0 2px 3px rgba(0,0,0,.4))}
+.chand .handsvg,.chandwrap .handsvg{filter:drop-shadow(0 2px 4px rgba(0,0,0,.5))}
+.card .fav .handsvg{display:block}
+.waza .h .handsvg,.enemy-hist .handsvg{vertical-align:middle}
+.handbtn .hn{font-size:12px;font-weight:800;margin-top:4px;display:block}
+.handbtn .hw{font-size:10px;color:var(--onibi);display:block;margin-top:2px;min-height:12px}
+.handbtn:active{transform:scale(.94)}
+.handbtn:disabled{opacity:.4}
+.handbtn.favme{border-color:var(--gold1)}
+.favtag{font-size:9px;color:var(--gold1)}
+#blog{background:#0c0b14;border:1px solid #39355a;border-radius:12px;padding:10px 12px;margin-top:12px;
+  height:150px;overflow-y:auto;font-size:13px;line-height:1.7}
+#blog .imp{color:var(--shu);font-weight:800}
+#blog .good{color:var(--onibi);font-weight:800}
+#blog .gold{color:var(--gold1);font-weight:800}
+.clash{text-align:center;margin-top:8px;min-height:120px}
+.clashbanner{display:inline-block;font-weight:900;font-size:26px;letter-spacing:.08em;padding:8px 26px;border-radius:14px;
+  margin-bottom:6px;animation:cpop .32s cubic-bezier(.2,1.7,.4,1);border:3px solid;box-shadow:0 4px 0 rgba(0,0,0,.3)}
+@keyframes cpop{0%{transform:scale(.3) rotate(-4deg);opacity:0}70%{transform:scale(1.12)}100%{transform:scale(1) rotate(0);opacity:1}}
+.clashbanner.cwin{color:#0d2a17;background:linear-gradient(160deg,#8affbc,#2ee07a);border-color:#0f6e3d;text-shadow:0 1px 0 rgba(255,255,255,.5)}
+.clashbanner.close{color:#fff;background:linear-gradient(160deg,#ff8a8a,#e83b3b);border-color:#8a1010;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+.clashbanner.caiko{color:#3d2b00;background:linear-gradient(160deg,#ffe98a,#ffce2e);border-color:#a06f00;text-shadow:0 1px 0 rgba(255,255,255,.4)}
+.clashline{display:flex;align-items:flex-start;justify-content:center;gap:18px;font-size:38px}
+.clashline .chandwrap{display:flex;flex-direction:column;align-items:center;gap:2px}
+.clashline .chlbl{font-size:12px;font-weight:800;color:#b9a9e0}
+.clashline .chand{position:relative;transition:transform .15s;filter:grayscale(.2)}
+.clashline .cvs{font-size:15px;font-weight:900;color:#9a94b8;margin-top:20px}
+.clashline .wonH{transform:scale(1.4);filter:drop-shadow(0 0 12px rgba(255,217,74,1)) grayscale(0)}
+.clashline .lostH{transform:scale(.72);opacity:.45;filter:grayscale(1)}
+.cmk{position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:22px;line-height:1}
+.cmk.crown{top:-20px;animation:crownb .5s ease-out}
+.cmk.crown .crownsvg{display:block;filter:drop-shadow(0 2px 3px rgba(0,0,0,.4))}
+.cmk.cross{color:#ff3b3b;font-weight:900;-webkit-text-stroke:2px #fff;font-size:26px;top:-6px}
+@keyframes crownb{0%{transform:translateX(-50%) translateY(-8px) scale(0);opacity:0}60%{transform:translateX(-50%) translateY(-2px) scale(1.3)}100%{transform:translateX(-50%) translateY(0) scale(1);opacity:1}}
+/* ===== 必殺技 演出 ===== */
+#sp-overlay{position:fixed;inset:0;z-index:60;display:none;pointer-events:none;overflow:hidden}
+#sp-overlay.show{display:block}
+#sp-dark{position:absolute;inset:0;background:radial-gradient(circle at 50% 50%, rgba(30,0,40,.2), rgba(0,0,0,.82));opacity:0;animation:spdark 1.7s ease-out}
+@keyframes spdark{0%{opacity:0}10%{opacity:1}72%{opacity:1}100%{opacity:0}}
+#sp-flash{position:absolute;inset:0;background:radial-gradient(circle,#fff,rgba(255,217,74,.7) 35%,rgba(180,60,255,.35) 65%,transparent);opacity:0;animation:spflash 1.7s ease-out}
+@keyframes spflash{0%{opacity:0}5%{opacity:1}16%{opacity:.15}20%{opacity:.9}34%{opacity:.3}100%{opacity:0}}
+#sp-rays{position:absolute;top:50%;left:50%;width:260vmax;height:260vmax;transform:translate(-50%,-50%);
+  background:repeating-conic-gradient(from 0deg at 50% 50%, rgba(255,217,74,.55) 0deg 5deg, transparent 5deg 12deg);
+  opacity:0;animation:sprays 1.7s ease-out}
+@keyframes sprays{0%{opacity:0;transform:translate(-50%,-50%) scale(.2) rotate(0)}
+  15%{opacity:.9}100%{opacity:0;transform:translate(-50%,-50%) scale(1.5) rotate(80deg)}}
+/* 斬撃ライン */
+#sp-slash,#sp-slash2{position:absolute;top:50%;left:-20%;width:140%;height:12px;transform:translateY(-50%) rotate(-24deg);
+  background:linear-gradient(90deg,transparent,#fff 45%,#fff 55%,transparent);opacity:0;box-shadow:0 0 24px 6px rgba(255,255,255,.9);
+  animation:spslash .5s ease-out .28s}
+#sp-slash2{transform:translateY(-50%) rotate(20deg);animation-delay:.42s;height:8px}
+@keyframes spslash{0%{opacity:0;transform:translateY(-50%) rotate(var(--r,-24deg)) scaleX(0)}
+  30%{opacity:1}60%{opacity:1;transform:translateY(-50%) rotate(-24deg) scaleX(1)}100%{opacity:0}}
+#sp-slash{--r:-24deg}#sp-slash2{--r:20deg}
+#sp-particles{position:absolute;inset:0}
+.sp-p{position:absolute;top:50%;left:50%;width:12px;height:12px;border-radius:50%;
+  background:radial-gradient(circle,#fff,#ffd94a 60%,transparent);opacity:0}
+#sp-overlay.show .sp-p{animation:sppart 1s ease-out .3s}
+@keyframes sppart{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}
+  20%{opacity:1}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.4)}}
+#sp-portrait{position:absolute;top:50%;left:50%;width:240px;height:240px;transform:translate(-50%,-50%) scale(.2);opacity:0;
+  animation:spport 1.7s cubic-bezier(.15,1.5,.3,1)}
+#sp-portrait svg{width:100%;height:100%;filter:drop-shadow(0 0 30px rgba(255,217,74,1)) drop-shadow(0 0 8px rgba(255,90,60,.9))}
+@keyframes spport{0%{opacity:0;transform:translate(-50%,-50%) scale(.15) rotate(-16deg)}
+  14%{opacity:1;transform:translate(-50%,-50%) scale(1.18) rotate(5deg)}
+  22%{transform:translate(-50%,-50%) scale(.98) rotate(-2deg)}
+  30%{transform:translate(-50%,-50%) scale(1.06) rotate(0)}
+  64%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(1.4)}}
+#sp-title{position:absolute;top:19%;left:0;right:0;text-align:center;font-size:34px;font-weight:900;color:#ffd94a;
+  text-shadow:0 0 22px rgba(255,107,74,.95),0 3px 0 #7a2e1f;letter-spacing:.22em;opacity:0;animation:sptitle 1.7s ease-out}
+@keyframes sptitle{0%{opacity:0;transform:translateY(24px) scale(.6)}14%{opacity:1;transform:translateY(0) scale(1)}78%{opacity:1}100%{opacity:0}}
+#sp-kanji{position:absolute;bottom:17%;left:0;right:0;text-align:center;font-size:92px;font-weight:900;color:#ff2e2e;
+  text-shadow:0 0 40px rgba(255,46,46,1),4px 4px 0 #4a0000,-2px -2px 0 #fff;letter-spacing:.15em;opacity:0;
+  animation:spkanji 1.7s cubic-bezier(.2,1.6,.3,1)}
+@keyframes spkanji{0%{opacity:0;transform:scale(3) rotate(-10deg)}18%{opacity:1;transform:scale(1) rotate(0)}
+  24%{transform:scale(1.12)}30%{transform:scale(1)}80%{opacity:1}100%{opacity:0;transform:scale(1.2)}}
+@keyframes shake{0%,100%{transform:translate(0,0)}8%{transform:translate(-10px,5px) rotate(-.5deg)}
+  20%{transform:translate(12px,-7px) rotate(.6deg)}32%{transform:translate(-9px,8px)}44%{transform:translate(10px,4px) rotate(-.4deg)}
+  56%{transform:translate(-8px,-6px)}68%{transform:translate(7px,6px) rotate(.3deg)}80%{transform:translate(-5px,-4px)}92%{transform:translate(3px,3px)}}
+.shaking{animation:shake .7s ease-in-out}
+.shaking-lite{animation:shake .4s ease-in-out}
+/* 敵カードの被弾フラッシュ */
+@keyframes hitflash{0%,100%{filter:none}20%{filter:brightness(2.2) saturate(.4)}40%{filter:brightness(.6)}60%{filter:brightness(1.8)}}
+.hitflash{animation:hitflash .5s ease-out}
+#dmg-pop{position:fixed;top:34%;left:50%;transform:translateX(-50%);z-index:61;font-weight:900;
+  font-size:62px;color:#ffd94a;text-shadow:0 0 20px rgba(255,107,74,.9),3px 3px 0 #7a2e1f;
+  display:none;pointer-events:none;font-family:"Mochiy Pop One","Zen Maru Gothic",sans-serif;white-space:nowrap}
+#dmg-pop.show{display:block;animation:dmgpop 1s cubic-bezier(.2,1.5,.3,1)}
+#dmg-pop.crit{font-size:96px;color:#fff;text-shadow:0 0 34px rgba(255,46,46,1),0 0 12px #ffd94a,5px 5px 0 #7a0000}
+#dmg-pop.crit::after{content:" 会心!";font-size:.4em;color:#ffd94a}
+@keyframes dmgpop{0%{opacity:0;transform:translateX(-50%) scale(.3)}25%{opacity:1;transform:translateX(-50%) scale(1.15)}
+  60%{transform:translateX(-50%) scale(1)}100%{opacity:0;transform:translateX(-50%) translateY(-30px) scale(1)}}
+.say{background:var(--washi);color:#241f18;border-radius:14px;padding:10px 14px;font-weight:800;font-size:14px;
+  position:relative;margin-top:6px;animation:pop .25s ease;box-shadow:0 3px 10px rgba(0,0,0,.4)}
+.say::after{content:"";position:absolute;bottom:-9px;left:36px;border:10px solid transparent;border-top-color:var(--washi);border-bottom:none}
+
+/* ---------- モーダル ---------- */
+.modal{position:fixed;inset:0;background:rgba(6,5,12,.85);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+.modal.show{display:flex}
+.modal-inner{text-align:center;max-width:340px;width:100%}
+.getlabel{font-size:20px;font-weight:900;color:var(--gold1);letter-spacing:.2em;margin-bottom:14px}
+.cardflip{display:inline-block;animation:pop .5s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{0%{transform:scale(.2) rotate(-14deg);opacity:0}100%{transform:scale(1) rotate(0);opacity:1}}
+.newtag{color:var(--shu);font-weight:900;margin-top:10px}
+
+/* ---------- その他 ---------- */
+.lvgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px}
+.lvbtn{background:linear-gradient(160deg,var(--sumi3),var(--sumi2));border:2px solid #56417f;border-radius:14px;padding:16px 0;font-size:20px;font-weight:900;color:var(--gold1);cursor:pointer;font-family:inherit;box-shadow:0 3px 0 rgba(0,0,0,.25)}
+.lvbtn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.25)}
+.tabs{display:flex;gap:8px;margin-top:10px}
+.tab{flex:1;background:var(--sumi2);border:2px solid #56417f;color:#cfc3ea;border-radius:12px;padding:11px;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit}
+.tab.on{color:#241a3a;background:var(--onibi);border-color:var(--onibi)}
+.sortbtn{background:var(--sumi2);border:2px solid #56417f;color:#cfc3ea;border-radius:20px;padding:6px 16px;
+  font-weight:800;font-size:13px;cursor:pointer;font-family:inherit;margin:0 4px}
+.sortbtn.on{color:#241a3a;background:var(--gold1);border-color:var(--gold1)}
+.regionbox{margin-top:10px;padding:10px 12px;background:rgba(255,217,74,.08);border:1px solid rgba(255,217,74,.35);
+  border-radius:10px;line-height:1.6;text-align:left}
+.card.samereg{outline:2px solid var(--gold1);outline-offset:1px}
+.regtag{position:absolute;bottom:-8px;right:-6px;background:var(--gold1);color:#3d2b00;font-size:9px;font-weight:900;
+  padding:2px 6px;border-radius:8px;border:2px solid var(--sumi);z-index:3}
+.prog{font-size:13px;color:var(--onibi);margin-top:8px;font-weight:800}
+input.txt{width:100%;background:#1a1330;border:2px solid #56417f;border-radius:12px;color:var(--washi);
+  font-size:20px;padding:12px;margin-top:10px;font-family:inherit;text-align:center;letter-spacing:.3em}
+.record{display:flex;gap:14px;justify-content:center;margin-top:14px;font-size:14px;color:#cfc3ea}
+.record b{color:var(--gold1);font-size:17px}
+.soundpanel{margin-top:16px;background:var(--sumi2);border:2px solid #3a2f5c;border-radius:16px;padding:12px 14px}
+.soundrow{display:flex;align-items:center;gap:10px;margin:6px 0}
+.sndtoggle{background:var(--sumi3);border:2px solid #56417f;color:var(--washi);font-family:inherit;font-weight:800;
+  font-size:13px;border-radius:10px;padding:8px 10px;cursor:pointer;white-space:nowrap;min-width:96px;text-align:left}
+.sndtoggle.off{opacity:.45;text-decoration:line-through}
+.sndtoggle rt{font-size:.5em;color:#ffe0b0;font-weight:600}
+.volslider{flex:1;-webkit-appearance:none;appearance:none;height:8px;border-radius:8px;
+  background:linear-gradient(90deg,var(--onibi),var(--murasaki));outline:none}
+.volslider::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;
+  background:var(--gold1);border:2px solid #7a5a00;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.4)}
+.volslider::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--gold1);border:2px solid #7a5a00;cursor:pointer}
+.volnum{font-size:13px;font-weight:800;color:var(--gold1);min-width:28px;text-align:right}
+.statusline{color:var(--onibi);font-size:13px;margin-top:10px;min-height:18px;text-align:center}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ===== ログイン ===== -->
+  <div class="screen" id="scr-auth">
+    <div class="title-wrap">
+      <span class="hitodama" style="left:8%;top:0">🔥</span>
+      <h1 class="game-title mincho" style="font-size:30px">妖怪じゃんけん<br>大戦</h1>
+      <div class="subtitle mincho">全国47都道府県の妖怪大集結</div>
+    </div>
+    <h2 class="sect mincho">👤 なまえとあいことばを決めてね</h2>
+    <p class="note">コレクションを保存するために、ユーザーネームとパスワードの登録が必要です。<b style="color:var(--shu)">ほかのサイトで使っているパスワードは使わないでね!</b></p>
+    <input class="txt" id="auth-name" maxlength="12" placeholder="ユーザーネーム" style="letter-spacing:.05em">
+    <input class="txt" id="auth-pass" type="password" maxlength="20" placeholder="パスワード(4文字以上)" style="letter-spacing:.05em">
+    <button class="btn primary" onclick="register()"><span class="em">✨</span>新規登録してはじめる</button>
+    <button class="btn" onclick="login()"><span class="em">🔑</span>ログイン</button>
+    <div class="statusline" id="auth-status"></div>
+  </div>
+
+  <!-- ===== ホーム ===== -->
+  <div class="screen active" id="scr-home">
+    <div class="title-wrap">
+      <span class="hitodama" style="left:8%;top:0">🔥</span>
+      <span class="hitodama" style="right:10%;top:30px;animation-delay:1.6s">🔥</span>
+      <h1 class="game-title mincho" style="font-size:36px"><ruby>妖怪<rt>ようかい</rt></ruby>じゃんけん<br><ruby>大戦<rt>たいせん</rt></ruby></h1>
+      <div class="subtitle mincho">〜<ruby>全国<rt>ぜんこく</rt></ruby><ruby>妖怪<rt>ようかい</rt></ruby>バトル〜</div>
+      <div class="byline"><ruby>全国<rt>ぜんこく</rt></ruby>47<ruby>都道府県<rt>とどうふけん</rt></ruby>の<ruby>妖怪<rt>ようかい</rt></ruby> + <ruby>海外<rt>かいがい</rt></ruby>モンスター、<ruby>全<rt>ぜん</rt></ruby>57<ruby>体<rt>たい</rt></ruby></div>
+      <div class="byline" id="home-user" style="color:var(--onibi);font-size:13px;margin-top:6px"></div>
+    </div>
+    <button class="btn primary" onclick="startCpuFlow()"><span class="em iph" data-i="oni" data-s="24"></span>CPU<ruby>対戦<rt>たいせん</rt></ruby><span style="float:right;font-size:12px;opacity:.85;margin-top:5px">つよさ1〜10</span></button>
+    <button class="btn" onclick="startOnlineFlow()"><span class="em iph" data-i="globe" data-s="24"></span>オンライン<ruby>対戦<rt>たいせん</rt></ruby><span style="float:right;font-size:12px;opacity:.85;margin-top:5px">あいことばで<ruby>対戦<rt>たいせん</rt></ruby></span></button>
+    <button class="btn" onclick="openCollection()"><span class="em iph" data-i="book" data-s="24"></span>コレクション<span class="prog" style="float:right;font-size:12px;margin-top:5px" id="home-prog"></span></button>
+    <div class="record" id="home-record"></div>
+    <div class="soundpanel">
+      <div class="soundrow">
+        <button class="sndtoggle" id="bgm-toggle" onclick="toggleBgm()">🎵 BGM</button>
+        <input type="range" min="0" max="100" value="40" id="bgm-slider" class="volslider" oninput="onBgmSlider(this.value)">
+        <span class="volnum" id="bgm-num">40</span>
+      </div>
+      <div class="soundrow">
+        <button class="sndtoggle" id="sfx-toggle" onclick="toggleSfx()">🔊 <ruby>効果音<rt>こうかおん</rt></ruby></button>
+        <input type="range" min="0" max="100" value="70" id="sfx-slider" class="volslider" oninput="onSfxSlider(this.value)">
+        <span class="volnum" id="sfx-num">70</span>
+      </div>
+      <button class="btn small ghost" onclick="logout()" style="color:#cfc3ea;margin-top:4px">ログアウト</button>
+    </div>
+    <div class="note" style="text-align:center;margin-top:20px"><span class="iph" data-i="swords" data-s="18"></span> バトルを<ruby>戦<rt>たたか</rt></ruby>い<ruby>抜<rt>ぬ</rt></ruby>くと <b style="color:var(--gold1)"><ruby>妖怪<rt>ようかい</rt></ruby>カード</b> がもらえる!<br><span class="iph" data-i="trophy" data-s="18"></span> <ruby>勝<rt>か</rt></ruby>つと <b style="color:var(--onibi)"><ruby>技<rt>わざ</rt></ruby>カード</b> もついてくる!(にげたら0<ruby>枚<rt>まい</rt></ruby>)<br>ノーマル・レアには5%で<ruby>光<rt>ひか</rt></ruby>り<ruby>輝<rt>かがや</rt></ruby>く <span style="color:var(--gold1);font-weight:800">GOLDカード</span> が…!?</div>
+  </div>
+
+  <!-- ===== CPUレベル選択 ===== -->
+  <div class="screen" id="scr-level">
+    <div class="backbar"><button class="backbtn" onclick="go('scr-home')">◀ もどる</button></div>
+    <h2 class="sect mincho"><span class="iph" data-i="oni" data-s="26"></span> CPUのつよさを<ruby>選<rt>えら</rt></ruby>ぶ</h2>
+    <p class="note"><ruby>数字<rt>すうじ</rt></ruby>が<ruby>大<rt>おお</rt></ruby>きいほど、<ruby>強<rt>つよ</rt></ruby>い<ruby>妖怪<rt>ようかい</rt></ruby>と<ruby>賢<rt>かしこ</rt></ruby>い<ruby>読<rt>よ</rt></ruby>みで<ruby>襲<rt>おそ</rt></ruby>いかかってくるぞ。<b style="color:var(--onibi)"><ruby>強<rt>つよ</rt></ruby>い<ruby>敵<rt>てき</rt></ruby>を<ruby>倒<rt>たお</rt></ruby>すほど、<ruby>高<rt>こう</rt></ruby>レアのカードが<ruby>出<rt>で</rt></ruby>やすくなるぞ!</b></p>
+    <div class="lvgrid" id="lvgrid"></div>
+    <h2 class="sect mincho" style="margin-top:20px"><span class="iph" data-i="swords" data-s="26"></span> バトルのシステム</h2>
+    <p class="note">
+    ・<b style="color:var(--washi)">3<ruby>体<rt>たい</rt></ruby><ruby>編成<rt>へんせい</rt></ruby>のチーム<ruby>戦<rt>せん</rt></ruby></b>:<ruby>倒<rt>たお</rt></ruby>れたら<ruby>次<rt>つぎ</rt></ruby>の<ruby>妖怪<rt>ようかい</rt></ruby>と<ruby>交代<rt>こうたい</rt></ruby>。<ruby>全員<rt>ぜんいん</rt></ruby><ruby>倒<rt>たお</rt></ruby>すと<ruby>勝<rt>か</rt></ruby>ち!<br>
+    ・<b style="color:var(--onibi)"><ruby>地縁<rt>ちえん</rt></ruby>ボーナス</b>:<ruby>同<rt>おな</rt></ruby>じ<ruby>地方<rt>ちほう</rt></ruby>を2<ruby>体<rt>たい</rt></ruby>そろえると<ruby>全員<rt>ぜんいん</rt></ruby><ruby>強化<rt>きょうか</rt></ruby>、3<ruby>体<rt>たい</rt></ruby>でさらに<ruby>強化<rt>きょうか</rt></ruby>!<br>
+    ・<b style="color:var(--gold1)"><ruby>妖力<rt>ようりょく</rt></ruby>ゲージ</b>:じゃんけんに<ruby>勝<rt>か</rt></ruby>つと<ruby>溜<rt>た</rt></ruby>まり、<ruby>満<rt>まん</rt></ruby>タンで<span class="iph" data-i="tengu" data-s="20"></span><ruby>必殺技<rt>ひっさつわざ</rt></ruby>(<ruby>勝<rt>か</rt></ruby>てば<ruby>超特大<rt>ちょうとくだい</rt></ruby>ダメージ)!<br>
+    ・ダブったカードは<b style="color:var(--shu)">コレクションの<span class="iph" data-i="hammer" data-s="18"></span><ruby>合成<rt>ごうせい</rt></ruby></b>でGOLDや<ruby>上位技<rt>じょういわざ</rt></ruby>に<ruby>化<rt>ば</rt></ruby>ける!</p>
+    <h2 class="sect mincho" style="margin-top:16px"><span class="iph" data-i="mega" data-s="26"></span> セリフを<ruby>読<rt>よ</rt></ruby>め!(<ruby>読<rt>よ</rt></ruby>み<ruby>合<rt>あ</rt></ruby>いのコツ)</h2>
+    <p class="note">
+    バトル<ruby>中<rt>ちゅう</rt></ruby>、CPUはときどきセリフでつぎの<ruby>手<rt>て</rt></ruby>をもらす。<br>
+    ・「<ruby>怪力<rt>かいりき</rt></ruby>/<ruby>拳<rt>こぶし</rt></ruby>」の<ruby>話<rt>はなし</rt></ruby> → <b style="color:var(--washi)"><span class="hph" data-h="g"></span>グー</b>の<ruby>前<rt>まえ</rt></ruby>ぶれ<br>
+    ・「<ruby>切<rt>き</rt></ruby>り<ruby>裂<rt>さ</rt></ruby>く/<ruby>爪<rt>つめ</rt></ruby>」の<ruby>話<rt>はなし</rt></ruby> → <b style="color:var(--washi)"><span class="hph" data-h="c"></span>チョキ</b>の<ruby>前<rt>まえ</rt></ruby>ぶれ<br>
+    ・「<ruby>包<rt>つつ</rt></ruby>み<ruby>込<rt>こ</rt></ruby>む/<ruby>大<rt>おお</rt></ruby>きな<ruby>一手<rt>いって</rt></ruby>」→ <b style="color:var(--washi)"><span class="hph" data-h="p"></span>パー</b>の<ruby>前<rt>まえ</rt></ruby>ぶれ<br>
+    ・「<ruby>奥義<rt>おうぎ</rt></ruby>」→ <b style="color:var(--gold1)"><ruby>得意手<rt>とくいて</rt></ruby></b>が<ruby>来<rt>く</rt></ruby>る(Lv3〜)<br>
+    ・「<ruby>見切<rt>みき</rt></ruby>った」→ <b style="color:var(--shu)">あなたの<ruby>直前<rt>ちょくぜん</rt></ruby>の<ruby>手<rt>て</rt></ruby>に<ruby>勝<rt>か</rt></ruby>つ<ruby>手<rt>て</rt></ruby></b>を<ruby>出<rt>だ</rt></ruby>してくる(Lv4〜)<br>
+    ・「<ruby>同<rt>おな</rt></ruby>じ<ruby>手<rt>て</rt></ruby>は<ruby>二度<rt>にど</rt></ruby>と<ruby>使<rt>つか</rt></ruby>わん」→ <ruby>直前<rt>ちょくぜん</rt></ruby>と<ruby>同<rt>おな</rt></ruby>じ<ruby>手<rt>て</rt></ruby>は<ruby>来<rt>こ</rt></ruby>ない(Lv6〜)<br>
+    ・ただし<b style="color:var(--shu)">Lv8<ruby>以上<rt>いじょう</rt></ruby>はたまにウソをつく…!</b><br>
+    さらに、あいこが<ruby>起<rt>お</rt></ruby>きるたび<ruby>両者<rt>りょうしゃ</rt></ruby>に「<ruby>妖気<rt>ようき</rt></ruby>チャージ」がたまり、<ruby>次<rt>つぎ</rt></ruby>の<ruby>一撃<rt>いちげき</rt></ruby>が<ruby>強<rt>つよ</rt></ruby>くなるぞ(<ruby>最大<rt>さいだい</rt></ruby>3つ)。</p>
+  </div>
+
+  <!-- ===== キャラ&技 選択 ===== -->
+  <div class="screen" id="scr-select">
+    <div class="backbar"><button class="backbtn" onclick="cancelSelect()">◀ もどる</button></div>
+    <h2 class="sect mincho"><span class="iph" data-i="swords" data-s="24"></span> 妖怪を3体えらぶ</h2>
+    <p class="note">先頭から順に出撃!倒れたら次の妖怪と交代する。<b style="color:var(--onibi)">同じ地方の妖怪を2体以上そろえると「地縁ボーナス」で全員強化!</b></p>
+    <div id="team-slots" class="team-slots"></div>
+    <div id="team-bonus" class="team-bonus"></div>
+    <div class="cardgrid" id="sel-chars"></div>
+    <h2 class="sect mincho" style="margin-top:18px"><span class="iph" data-i="scroll" data-s="24"></span> 技カードをセット(全員共通)</h2>
+    <p class="note">各手にセットした技カードのぶん、その手で戦うとき強くなる。チーム全員に適用される。</p>
+    <div id="sel-waza"></div>
+    <button class="btn primary" id="btn-fight" onclick="confirmSelect()" disabled><span class="em">🔥</span>バトル開始!</button>
+  </div>
+
+  <!-- ===== バトル ===== -->
+  <div class="screen" id="scr-battle">
+    <div class="team-dots" id="enemy-dots"></div>
+    <div class="say" id="enemy-say" style="display:none"></div>
+    <div class="fighter enemy" id="f-enemy">
+      <div class="card mini" id="enemy-card"></div>
+      <div class="info">
+        <div class="fname" id="enemy-name"></div>
+        <div class="hpbar"><div class="hpfill" id="enemy-hp"></div></div>
+        <div class="hptxt" id="enemy-hptxt"></div>
+        <div class="spbar"><div class="spfill" id="enemy-sp"></div></div>
+        <div class="hptxt" id="enemy-hist"></div>
+      </div>
+    </div>
+    <div class="clash" id="clash"></div>
+    <div class="fighter" id="f-me">
+      <div class="card mini" id="me-card"></div>
+      <div class="info">
+        <div class="fname" id="me-name"></div>
+        <div class="hpbar"><div class="hpfill" id="me-hp"></div></div>
+        <div class="hptxt" id="me-hptxt"></div>
+        <div class="spbar"><div class="spfill" id="me-sp"></div></div>
+        <div class="hptxt enemy-hist" id="me-hist"></div>
+      </div>
+    </div>
+    <div class="team-dots" id="me-dots"></div>
+    <button class="btn primary spbtn" id="btn-sp" onclick="useSpecial()" style="display:none"><span class="em iph" data-i="tengu" data-s="24"></span>必殺・妖力解放!(妖力MAX)</button>
+    <div class="handbtns">
+      <button class="handbtn" id="hb-g" onclick="playHand('g')"><span class="he" id="he-g"></span><span class="hn">グー</span><span class="hw" id="hw-g"></span></button>
+      <button class="handbtn" id="hb-c" onclick="playHand('c')"><span class="he" id="he-c"></span><span class="hn">チョキ</span><span class="hw" id="hw-c"></span></button>
+      <button class="handbtn" id="hb-p" onclick="playHand('p')"><span class="he" id="he-p"></span><span class="hn">パー</span><span class="hw" id="hw-p"></span></button>
+    </div>
+    <div class="statusline" id="bstatus"></div>
+    <div id="blog"></div>
+    <button class="btn small ghost" onclick="fleeBattle()" id="btn-flee" style="color:#9a94b8">にげる(降参)</button>
+  </div>
+
+  <!-- ===== 結果 ===== -->
+  <div class="screen" id="scr-result">
+    <div class="title-wrap">
+      <h1 class="game-title mincho" id="result-title" style="font-size:52px"></h1>
+      <div class="subtitle mincho" id="result-sub"></div>
+    </div>
+    <div style="text-align:center" id="result-detail"></div>
+    <button class="btn primary" onclick="goHome()"><span class="em">🏠</span>ホームにもどる</button>
+    <button class="btn" id="btn-rematch" onclick="rematch()"><span class="em">🔁</span>もう一回たたかう</button>
+  </div>
+
+  <!-- ===== コレクション ===== -->
+  <div class="screen" id="scr-collection">
+    <div class="backbar"><button class="backbtn" onclick="go('scr-home');renderHome()">◀ もどる</button></div>
+    <h2 class="sect mincho"><span class="iph" data-i="book" data-s="24"></span> コレクション</h2>
+    <div class="prog" id="col-prog"></div>
+    <div class="tabs">
+      <button class="tab on" id="tab-yokai" onclick="colTab('yokai')">妖怪</button>
+      <button class="tab" id="tab-waza" onclick="colTab('waza')">技</button>
+      <button class="tab" id="tab-fuse" onclick="colTab('fuse')"><span class="iph" data-i="hammer" data-s="16"></span>合成</button>
+    </div>
+    <div id="col-sort" style="display:none;text-align:center;margin-top:8px;margin-bottom:2px">
+      <button class="sortbtn on" id="sort-rar" onclick="setColSort('rar')">レア度順</button>
+      <button class="sortbtn" id="sort-pref" onclick="setColSort('pref')">都道府県順</button>
+    </div>
+    <div class="cardgrid" id="col-grid"></div>
+    <div id="col-waza-list" style="display:none"></div>
+    <div id="col-fuse-list" style="display:none"></div>
+  </div>
+
+  <!-- ===== オンライン ===== -->
+  <div class="screen" id="scr-online">
+    <div class="backbar"><button class="backbtn" onclick="leaveOnline()">◀ もどる</button></div>
+    <h2 class="sect mincho"><span class="iph" data-i="globe" data-s="24"></span> オンライン対戦</h2>
+    <div id="online-setup">
+      <p class="note">友だちと同じ「あいことば」(数字4ケタなど)を入力すると、同じ部屋でマッチングします。</p>
+      <input class="txt" id="room-code" inputmode="numeric" maxlength="8" placeholder="あいことば">
+      <button class="btn primary" onclick="joinRoom()"><span class="em">🚪</span>部屋に入る</button>
+    </div>
+    <div id="online-wait" style="display:none;text-align:center;padding:30px 0">
+      <div style="font-size:44px" class="hitodama">🔥</div>
+      <p style="margin-top:14px;font-weight:800">相手を待っています…</p>
+      <p class="note" id="online-room-label"></p>
+    </div>
+    <div id="online-noconf" style="display:none">
+      <p class="note">オンライン対戦を使うには、ファイル先頭の <b style="color:var(--onibi)">SUPABASE_URL / SUPABASE_KEY</b> にSupabaseプロジェクトのURLとanonキーを入れてください(無料枠でOK・テーブル作成は不要)。設定後にGitHub Pagesへアップすれば動きます。</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== カード獲得モーダル ===== -->
+<div class="modal" id="modal-get">
+  <div class="modal-inner">
+    <div class="getlabel mincho">カードゲット!</div>
+    <div class="cardflip" id="get-card"></div>
+    <div class="newtag" id="get-new"></div>
+    <button class="btn primary" onclick="closeGetModal()" style="text-align:center">OK!</button>
+  </div>
+</div>
+
+<!-- ===== 妖怪詳細モーダル ===== -->
+<div class="modal" id="modal-detail">
+  <div class="modal-inner">
+    <div class="cardflip" id="detail-card"></div>
+    <div class="detail-desc" id="detail-desc"></div>
+    <button class="btn primary" onclick="closeDetail()" style="text-align:center">とじる</button>
+  </div>
+</div>
+
+<!-- ===== 必殺技 演出オーバーレイ ===== -->
+<div id="sp-overlay">
+  <div id="sp-dark"></div>
+  <div id="sp-flash"></div>
+  <div id="sp-rays"></div>
+  <div id="sp-slash"></div>
+  <div id="sp-slash2"></div>
+  <div id="sp-particles"></div>
+  <div id="sp-portrait"></div>
+  <div id="sp-title" class="mincho">妖力解放</div>
+  <div id="sp-kanji" class="mincho">必殺</div>
+</div>
+<div id="dmg-pop"></div>
+
+<script>
+/* =====================================================
+   オンライン対戦の設定(Supabase・無料枠でOK)
+   1. supabase.com でプロジェクト作成
+   2. Settings → API の URL と anon public キーを下に貼る
+   ===================================================== */
+const SUPABASE_URL = "";   // 例: "https://xxxx.supabase.co"
+const SUPABASE_KEY = "";   // 例: "eyJhbGciOi..."
+/* アカウント同期も使う場合はSupabaseのSQL Editorで以下を実行:
+   create table yk_players (username text primary key, pass text not null, data jsonb, updated_at timestamptz default now());
+   alter table yk_players enable row level security;
+   create policy "yk anon all" on yk_players for all to anon using (true) with check (true);
+*/
+
+/* ================= BGM(3場面切替) ================= */
+const BGM_SRC={top:"bgm-top.mp3",battle:"bgm-battle.mp3",menu:"bgm-menu.mp3"};
+let bgmVol=(function(){try{const v=localStorage.getItem("yk_bgmvol");return v===null?0.4:+v}catch(e){return 0.4}})();
+let sfxVol=(function(){try{const v=localStorage.getItem("yk_sfxvol");return v===null?0.7:+v}catch(e){return 0.7}})();
+let bgmMuted=(function(){try{return localStorage.getItem("yk_bgm")==="0"}catch(e){return false}})();
+let bgmAudio=null,bgmCurrent=null,bgmWantScene=null;
+function ensureBgm(){
+  if(bgmAudio)return bgmAudio;
+  bgmAudio=new Audio();bgmAudio.loop=true;bgmAudio.preload="auto";bgmAudio.volume=bgmVol;
+  bgmAudio.addEventListener("error",()=>{}); // ファイルが無くても無視
+  return bgmAudio;
+}
+function playBgm(scene){
+  bgmWantScene=scene;
+  if(bgmMuted)return;
+  const a=ensureBgm();
+  if(bgmCurrent===scene&&!a.paused)return;
+  bgmCurrent=scene;
+  if(a.src.indexOf(BGM_SRC[scene])<0)a.src=BGM_SRC[scene];
+  a.volume=bgmVol;
+  const pr=a.play();if(pr&&pr.catch)pr.catch(()=>{}); // 自動再生ブロック対策(初回タップで開始)
+}
+function setBgmScene(scene){ // 画面遷移から呼ぶ
+  if(scene!==bgmWantScene)playBgm(scene);
+}
+function stopBgm(){if(bgmAudio){bgmAudio.pause()}bgmCurrent=null}
+function applyBgmVol(){if(bgmAudio)bgmAudio.volume=bgmVol;try{localStorage.setItem("yk_bgmvol",bgmVol)}catch(e){}}
+function applySfxVol(){try{localStorage.setItem("yk_sfxvol",sfxVol)}catch(e){}}
+function toggleBgm(){
+  bgmMuted=!bgmMuted;try{localStorage.setItem("yk_bgm",bgmMuted?"0":"1")}catch(e){}
+  if(bgmMuted)stopBgm();else if(bgmWantScene)playBgm(bgmWantScene);
+  updateAudioUI();
+}
+
+let AC=null,sfxOn=(function(){try{return localStorage.getItem("yk_sfx")!=="0"}catch(e){return true}})();
+function ac(){if(!AC){const A=window.AudioContext||window.webkitAudioContext;if(!A)return null;AC=new A()}if(AC.state==="suspended")AC.resume();return AC}
+function tone(freq,delay,dur,type="square",vol=.12,slideTo=0){const c=ac();if(!c)return;const t=c.currentTime+delay;vol*=sfxVol*2;
+  const o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.setValueAtTime(freq,t);
+  if(slideTo)o.frequency.exponentialRampToValueAtTime(slideTo,t+dur);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(g).connect(c.destination);o.start(t);o.stop(t+dur+.05)}
+function noiseS(delay,dur,vol=.15,hp=800){const c=ac();if(!c)return;const t=c.currentTime+delay;vol*=sfxVol*2;
+  const b=c.createBuffer(1,Math.max(1,c.sampleRate*dur),c.sampleRate),d=b.getChannelData(0);
+  for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+  const n=c.createBufferSource();n.buffer=b;
+  const f=c.createBiquadFilter();f.type="highpass";f.frequency.value=hp;
+  const g=c.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  n.connect(f).connect(g).connect(c.destination);n.start(t)}
+const SFX={
+ tap:()=>tone(700,0,.05,"square",.06),
+ select:()=>{tone(523,0,.08,"triangle",.11);tone(784,.06,.1,"triangle",.11);tone(1047,.13,.13,"triangle",.1)}, // モード/画面選択:上昇3音
+ levelpick:()=>{tone(660,0,.07,"square",.1);tone(880,.05,.07,"square",.1);tone(1175,.1,.14,"triangle",.12);noiseS(.1,.06,.05,4000)}, // レベル決定:キラッと決定音
+ hit:()=>{noiseS(0,.12,.2,600);tone(160,0,.16,"sawtooth",.16,80)},
+ big:()=>{noiseS(0,.2,.26,400);tone(120,0,.3,"sawtooth",.2,50);tone(880,.03,.14,"square",.1,1500)},
+ aiko:()=>{tone(440,0,.08,"square",.1);tone(415,.07,.1,"square",.1);noiseS(0,.08,.12,2500)},
+ charge:()=>tone(280,0,.28,"sine",.13,950),
+ tell:()=>{tone(980,0,.07,"square",.07);tone(1240,.08,.09,"square",.07)},
+ win:()=>[523,659,784,1047].forEach((f,i)=>tone(f,i*.12,.2,"square",.12)),
+ lose:()=>[330,262,196,131].forEach((f,i)=>tone(f,i*.15,.22,"sawtooth",.1)),
+ drawG:()=>{tone(220,0,.32,"sawtooth",.13,170);noiseS(0,.26,.2,300)},
+ gachaN:()=>tone(620,0,.09,"square",.11,950),
+ gachaR:()=>{[660,880].forEach((f,i)=>tone(f,i*.1,.14,"triangle",.14));noiseS(.2,.08,.06,4000)},
+ gachaSR:()=>{[523,659,784,1047,1319].forEach((f,i)=>tone(f,i*.09,.16,"triangle",.14));noiseS(0,.45,.05,5000)},
+ gachaMR:()=>{[392,523,659,784,1047,1319,1568].forEach((f,i)=>tone(f,i*.1,.22,"triangle",.15));tone(2093,.75,.3,"sine",.1);tone(2637,.88,.35,"sine",.1);noiseS(0,.8,.06,6000)},
+ gold:()=>[1568,1976,2637].forEach((f,i)=>tone(f,.15+i*.08,.16,"sine",.11)),
+ spCharge:()=>{tone(160,0,.7,"sawtooth",.14,1400);tone(320,0,.7,"square",.08,2000);
+   [0,.1,.2,.3,.4,.5].forEach((d,i)=>tone(400+i*180,d,.12,"triangle",.09));noiseS(.55,.2,.1,3000)},
+ spHit:()=>{
+   // 溜め → 斬撃(0.26s後にドン)
+   tone(320,0,.24,"square",.06,120);
+   [0,.06,.12,.18].forEach((d,i)=>tone(500+i*140,d,.1,"triangle",.06));
+   // インパクト(斬撃が入る瞬間)
+   noiseS(.26,.4,.4,250);tone(70,.26,.6,"sawtooth",.28,28);tone(150,.26,.45,"square",.2,50);
+   [1319,1760,2093,2637].forEach((f,i)=>tone(f,.3+i*.04,.24,"triangle",.14));
+   tone(55,.36,.6,"sine",.24,26);noiseS(.34,.35,.22,120)},
+};
+function play(name){if(!sfxOn||sfxVol<=0)return;try{SFX[name]&&SFX[name]()}catch(e){}}
+function toggleSfx(){sfxOn=!sfxOn;try{localStorage.setItem("yk_sfx",sfxOn?"1":"0")}catch(e){}
+  updateAudioUI();if(sfxOn)play("tap")}
+function onBgmSlider(v){bgmVol=v/100;applyBgmVol();document.getElementById("bgm-num").textContent=v;
+  if(bgmVol>0&&bgmMuted){bgmMuted=false;try{localStorage.setItem("yk_bgm","1")}catch(e){}if(bgmWantScene)playBgm(bgmWantScene)}
+  updateAudioUI()}
+function onSfxSlider(v){sfxVol=v/100;applySfxVol();document.getElementById("sfx-num").textContent=v;
+  if(sfxVol>0&&!sfxOn){sfxOn=true;try{localStorage.setItem("yk_sfx","1")}catch(e){}}
+  updateAudioUI()}
+function updateAudioUI(){
+  const bt=document.getElementById("bgm-toggle"),st=document.getElementById("sfx-toggle");
+  if(bt)bt.classList.toggle("off",bgmMuted||bgmVol<=0);
+  if(st)st.classList.toggle("off",!sfxOn||sfxVol<=0);
+  const bs=document.getElementById("bgm-slider"),ss=document.getElementById("sfx-slider");
+  if(bs){bs.value=Math.round(bgmVol*100);document.getElementById("bgm-num").textContent=Math.round(bgmVol*100)}
+  if(ss){ss.value=Math.round(sfxVol*100);document.getElementById("sfx-num").textContent=Math.round(sfxVol*100)}
+}
+
+/* ================= データ ================= */
+// rarity: N / R / SR / MR
+const YOKAI = [
+ ["hokkaido","コロポックル","北海道","🍄","N",""],
+ ["aomori","モッコ","青森","😈","N",""],
+ ["iwate","座敷わらし","岩手","👧","R","ざしきわらし"],
+ ["miyagi","タンタンコロリン","宮城","🍊","N",""],
+ ["akita","なまはげ","秋田","🔪","R",""],
+ ["yamagata","山姥","山形","👵","N","やまんば"],
+ ["fukushima","安達ヶ原の鬼婆","福島","🦴","N","あだちがはらのおにばば"],
+ ["ibaraki","ダイダラボッチ","茨城","🏔️","SR",""],
+ ["tochigi","九尾の狐","栃木","🦊","MR","きゅうびのきつね"],
+ ["gunma","オサキ狐","群馬","🌾","N","おさきぎつね"],
+ ["saitama","袖引き小僧","埼玉","👘","N","そでひきこぞう"],
+ ["chiba","海坊主","千葉","🌊","N","うみぼうず"],
+ ["tokyo","おいてけ堀","東京","🎣","N","おいてけぼり"],
+ ["kanagawa","江の島の五頭龍","神奈川","🐉","R","えのしまのごずりゅう"],
+ ["niigata","雪女","新潟","❄️","SR","ゆきおんな"],
+ ["toyama","立山天狗","富山","⛰️","N","たてやまてんぐ"],
+ ["ishikawa","アマメハギ","石川","🔥","N",""],
+ ["fukui","八百比丘尼","福井","🧜‍♀️","N","やおびくに"],
+ ["yamanashi","蟹坊主","山梨","🦀","N","かにぼうず"],
+ ["nagano","クダ狐","長野","🎋","N","くだぎつね"],
+ ["gifu","両面宿儺","岐阜","⚔️","SR","りょうめんすくな"],
+ ["shizuoka","夜泣き石","静岡","🪨","N","よなきいし"],
+ ["aichi","ヤロカ水","愛知","🌊","N","やろかみず"],
+ ["mie","ダンダラボッチ","三重","👣","N",""],
+ ["shiga","片輪車","滋賀","🛞","N","かたわぐるま"],
+ ["kyoto","酒呑童子","京都","🍶","MR","しゅてんどうじ"],
+ ["osaka","茨木童子","大阪","💪","R","いばらきどうじ"],
+ ["hyogo","皿屋敷のお菊","兵庫","🍽️","N","さらやしきのおきく"],
+ ["nara","ガゴゼ","奈良","😱","N",""],
+ ["wakayama","一本ダタラ","和歌山","🦵","N","いっぽんだたら"],
+ ["tottori","土転び","鳥取","🪨","N","つちころび"],
+ ["shimane","ヤマタノオロチ","島根","🐍","MR",""],
+ ["okayama","鬼神・温羅","岡山","🏯","R","きじん・うら"],
+ ["hiroshima","山本五郎左衛門","広島","🎭","N","さんもとごろうざえもん"],
+ ["yamaguchi","平家の怨霊","山口","👻","N","へいけのおんりょう"],
+ ["tokushima","児啼爺","徳島","👶","N","こなきじじい"],
+ ["kagawa","屋島の太三郎狸","香川","🦝","N","やしまのたさぶろうだぬき"],
+ ["ehime","牛鬼","愛媛","🐂","R","うしおに"],
+ ["kochi","シバテン","高知","🤸","N",""],
+ ["fukuoka","ぬりかべ","福岡","🧱","N",""],
+ ["saga","鍋島の化け猫","佐賀","🐈‍⬛","R","なべしまのばけねこ"],
+ ["nagasaki","磯撫で","長崎","🦈","N","いそなで"],
+ ["kumamoto","油すまし","熊本","🛢️","N","あぶらすまし"],
+ ["oita","別府の赤鬼","大分","♨️","N","べっぷのあかおに"],
+ ["miyazaki","ヒョウスベ","宮崎","💧","N",""],
+ ["kagoshima","一反もめん","鹿児島","🎐","N","いったんもめん"],
+ ["okinawa","キジムナー","沖縄","🌺","R",""],
+ ["dracula","ドラキュラ","ルーマニア","🧛","SR",""],
+ ["franken","フランケンシュタイン","スイス","🔩","SR",""],
+ ["wolfman","狼男","ヨーロッパ","🐺","R","おおかみおとこ"],
+ ["mummy","ミイラ男","エジプト","🩹","N","みいらおとこ"],
+ ["zombie","ゾンビ","ハイチ","🧟","N",""],
+ ["jiangshi","キョンシー","中国","🧧","N",""],
+ ["yeti","イエティ","ヒマラヤ","🦍","N",""],
+ ["banshee","バンシー","アイルランド","🌬️","N",""],
+ ["golem","ゴーレム","チェコ","🗿","N",""],
+ ["medusa","メデューサ","ギリシャ","👁️","R",""],
+].map(a=>({id:a[0],name:a[1],pref:a[2],emoji:a[3],rar:a[4],kana:a[5]||""}));
+const nameHTML=y=>y.kana?`<ruby>${y.name}<rt>${y.kana}</rt></ruby>`:y.name;
+
+const WAZA = [
+ {id:"g0",hand:"g",name:"素手",eff:{}},
+ {id:"g1",hand:"g",name:"剛拳",eff:{atk:8}},
+ {id:"g2",hand:"g",name:"鬼殺しの拳",eff:{atk:16}},
+ {id:"g3",hand:"g",name:"大岩砕き",eff:{atk:25,hp:10}},
+ {id:"c0",hand:"c",name:"素手",eff:{}},
+ {id:"c1",hand:"c",name:"疾風の鎌",eff:{atk:8}},
+ {id:"c2",hand:"c",name:"妖刀二連斬り",eff:{atk:14,def:6}},
+ {id:"c3",hand:"c",name:"かまいたち乱舞",eff:{atk:24,hp:8}},
+ {id:"p0",hand:"p",name:"素手",eff:{}},
+ {id:"p1",hand:"p",name:"呪符の壁",eff:{def:10}},
+ {id:"p2",hand:"p",name:"大団扇あおぎ",eff:{def:14,atk:6}},
+ {id:"p3",hand:"p",name:"百鬼結界",eff:{def:20,hp:15}},
+ // ★特殊効果技(HP攻防以外)★ rar: N/R/SR/MR
+ {id:"gS1",hand:"g",name:"不屈の構え",rar:"R",eff:{},sp:"guard",spText:"一度だけ、力尽きる一撃をHP1でこらえる"},
+ {id:"cS1",hand:"c",name:"見切りの目",rar:"SR",eff:{},sp:"foresee",spN:3,spText:"バトル開始から3ターン、相手の手が見える"},
+ {id:"pS1",hand:"p",name:"あいこ結界",rar:"R",eff:{},sp:"aikoGuard",spText:"あいこのとき、ダメージを受けない"},
+ {id:"pS2",hand:"p",name:"妖気吸引",rar:"SR",eff:{},sp:"lifesteal",spN:0.2,spText:"じゃんけんに勝つと、与えたダメージの2割ぶんHP回復"},
+ {id:"gS2",hand:"g",name:"呪いの反撃",rar:"SR",eff:{},sp:"thorns",spN:0.35,spText:"攻撃を受けたとき、そのダメージの35%を相手に反射"},
+ {id:"cS2",hand:"c",name:"妖力奔流",rar:"R",eff:{},sp:"spgain",spN:14,spText:"じゃんけんに勝つたび、妖力ゲージが多めにたまる"},
+ {id:"gS3",hand:"g",name:"背水の覚悟",rar:"MR",eff:{},sp:"lastwill",spN:2.0,spText:"HPが3割以下のあいだ、与えるダメージが2倍になる"},
+ {id:"pS3",hand:"p",name:"因果応報",rar:"MR",eff:{},sp:"revenge",spN:1.5,spText:"この妖怪が倒れるとき、相手に大ダメージの道連れ"},
+];
+// 特殊技のかんたん一覧( id → 定義)
+const SPWAZA=WAZA.filter(w=>w.sp);
+const HANDNAME={g:"グー",c:"チョキ",p:"パー"}, HANDEMO={g:"✊",c:"✌️",p:"✋"};
+const RARNAME={N:"ノーマル",R:"レア",SR:"スーパーレア",MR:"モンスターレア"};
+
+/* 得意手(各レアリティ内で✊✌️✋が均等になるよう固定割り当て) */
+const FAV={
+ kyoto:"g",tochigi:"c",shimane:"p", /* MR: 1/1/1 */
+ ibaraki:"g",franken:"g",gifu:"c",niigata:"p",dracula:"p", /* SR: 2/1/2 */
+ akita:"g",osaka:"g",okayama:"g",kanagawa:"c",ehime:"c",saga:"c",wolfman:"c",iwate:"p",okinawa:"p",medusa:"p", /* R: 3/4/3 */
+ hokkaido:"g",yamagata:"g",saitama:"g",toyama:"g",nagano:"g",aichi:"g",hyogo:"g",hiroshima:"g",wakayama:"g",kumamoto:"g",oita:"g",mummy:"g",golem:"g",
+ aomori:"c",fukushima:"c",chiba:"c",ishikawa:"c",yamanashi:"c",mie:"c",nara:"c",tottori:"c",kagawa:"c",nagasaki:"c",miyazaki:"c",zombie:"c",banshee:"c",
+ miyagi:"p",gunma:"p",tokyo:"p",fukui:"p",shizuoka:"p",shiga:"p",tokushima:"p",kochi:"p",fukuoka:"p",kagoshima:"p",jiangshi:"p",yeti:"p",yamaguchi:"p", /* N: 13/13/13 */
+};
+/* 図鑑用の解説 */
+const DESC={
+ hokkaido:"フキの葉の下に住む小人の妖精。アイヌに伝わる恵みの隣人。",
+ aomori:"津軽で「泣ぐ子はモッコに食わせる」と恐れられた鬼。",
+ iwate:"住みついた家に幸運をもたらす子どもの妖怪。",
+ miyagi:"仙台の古い柿の木が化けた入道。柿を採らずにいると現れる。",
+ akita:"「泣ぐ子はいねがー!」大晦日に家々を回る来訪神。",
+ yamagata:"山奥に住む老女の妖怪。旅人をもてなし、時に喰らう。",
+ fukushima:"旅人を襲った黒塚の鬼婆。能や歌舞伎でも有名。",
+ ibaraki:"山を作り沼を残した国づくりの巨人。",
+ tochigi:"絶世の美女・玉藻前に化けた大妖狐。殺生石の正体。",
+ gunma:"群れで家に憑くといわれる小さな憑き物狐。",
+ saitama:"夕暮れに袖をくいくい引っぱるいたずら妖怪。",
+ chiba:"海に浮かぶ巨大な黒い坊主頭。出会うと船が危ない。",
+ tokyo:"釣った魚を「置いてけ〜」と迫る堀の怪。本所七不思議のひとつ。",
+ kanagawa:"悪行を重ねたが天女に恋して改心した五つ頭の龍。",
+ niigata:"吹雪の夜に現れる氷の美女。息を吹けば人も凍る。",
+ toyama:"霊山・立山に棲む天狗。剱岳の風を操る。",
+ ishikawa:"能登の来訪神。怠け者の火ダコを剥ぎに来る。",
+ fukui:"人魚の肉を食べて八百年生きた尼僧。",
+ yamanashi:"甲府の寺に現れた大蟹の妖怪。和尚との問答で見破られた。",
+ nagano:"竹筒に入るほど小さな憑き物狐。信州に伝わる。",
+ gifu:"顔がふたつ腕が四本、飛騨の異形の豪族。",
+ shizuoka:"夜ごとすすり泣く、小夜の中山の石。",
+ aichi:"尾張の川に現れる洪水の妖怪。「やろか〜」と声をかけてくる。",
+ mie:"志摩の海からやってくる一つ目の巨人。",
+ shiga:"炎の車輪で夜道を走る怪。見ると祟られる。",
+ kyoto:"大江山に君臨した鬼の王。酒をこよなく愛す。",
+ osaka:"酒呑童子の右腕。渡辺綱に腕を斬られた大鬼。",
+ hyogo:"「一枚…二枚…」皿を数える井戸の亡霊。",
+ nara:"元興寺の鐘楼に現れた鬼。童子に退治された。",
+ wakayama:"一つ目一本足の山の怪。果無山脈に出る。",
+ tottori:"山道をゴロゴロと転がってくる土のかたまりの妖怪。",
+ shimane:"八つの頭を持つ大蛇。スサノオに退治された伝説の怪物。",
+ okayama:"鬼ノ城に拠った製鉄の鬼神。桃太郎伝説のモデル。",
+ hiroshima:"少年を30日間怪異で試した魔王。稲生物怪録に登場。",
+ yamaguchi:"壇ノ浦に沈んだ平家一門の無念の霊。",
+ tokushima:"赤ん坊の声で泣く老人。抱くと石のように重くなる。",
+ kagawa:"日本三名狸のひとり。屋島の禿狸として名高い変化の名人。",
+ ehime:"牛の頭に鬼の体。宇和島の祭りでも有名な海辺の怪。",
+ kochi:"相撲が大好きな川辺の小天狗。土佐の河童の仲間。",
+ fukuoka:"夜道を歩くと突然行く手をふさぐ、見えない壁。",
+ saga:"主の仇を討つため鍋島の殿様を苦しめた猫の怨霊。",
+ nagasaki:"肥前の海に現れる怪魚。針だらけの尾で船人を海へさらう。",
+ kumamoto:"峠道で「今もおるぞー」と現れる油瓶の怪。",
+ oita:"地獄めぐりの温泉に棲むという赤鬼。湯けむりが好物。",
+ miyazaki:"河童の親分格。笑いながら人を川へ誘う。",
+ kagoshima:"夜空を飛ぶ一反の木綿。首に巻きついてくる。",
+ okinawa:"ガジュマルの木に住む赤髪の精霊。魚の目玉が好物。",
+ dracula:"トランシルバニアの吸血鬼の王。夜の眷属を従える。",
+ franken:"博士が生み出した人造人間。怪力だが心は繊細。",
+ wolfman:"満月の夜に狼へ変身する呪われた人間。",
+ mummy:"王家の呪いで蘇った包帯の怪人。",
+ zombie:"蘇った死者。群れると手がつけられない。",
+ jiangshi:"額のお札で操られる、中国の跳ねる死体。",
+ yeti:"ヒマラヤの雪男。巨大な足跡だけを残す。",
+ banshee:"死を予告する泣き女の妖精。その叫びは不吉。",
+ golem:"泥から作られた魔法の巨人。額の文字で動く。",
+ medusa:"髪が蛇の怪物。目を見た者は石にされる。",
+};
+function hashN(s){let x=7;for(const c of s)x=(x*31+c.charCodeAt(0))%99991;return x}
+function favHand(y){return FAV[y.id]||["g","c","p"][hashN(y.id)%3]}
+function baseStats(y,gold){
+  const B={N:{hp:95,atk:45,def:35},R:{hp:120,atk:60,def:48},SR:{hp:150,atk:78,def:62},MR:{hp:190,atk:98,def:82}}[y.rar];
+  const v=.9+((hashN(y.id)%21)/100); // 0.90〜1.10 個体差
+  let s={hp:Math.round(B.hp*v),atk:Math.round(B.atk*v),def:Math.round(B.def*v)};
+  if(gold){const m=y.rar==="N"?1.38:1.15;s={hp:Math.round(s.hp*m),atk:Math.round(s.atk*m),def:Math.round(s.def*m)}}
+  return s;
+}
+function yokaiById(id){return YOKAI.find(y=>y.id===id)}
+function wazaById(id){return WAZA.find(w=>w.id===id)}
+
+/* ================= 地方(地縁ボーナス) ================= */
+const REGION={
+ hokkaido:"北海道",aomori:"東北",iwate:"東北",miyagi:"東北",akita:"東北",yamagata:"東北",fukushima:"東北",
+ ibaraki:"関東",tochigi:"関東",gunma:"関東",saitama:"関東",chiba:"関東",tokyo:"関東",kanagawa:"関東",
+ niigata:"中部",toyama:"中部",ishikawa:"中部",fukui:"中部",yamanashi:"中部",nagano:"中部",gifu:"中部",shizuoka:"中部",aichi:"中部",
+ mie:"近畿",shiga:"近畿",kyoto:"近畿",osaka:"近畿",hyogo:"近畿",nara:"近畿",wakayama:"近畿",
+ tottori:"中国",shimane:"中国",okayama:"中国",hiroshima:"中国",yamaguchi:"中国",
+ tokushima:"四国",kagawa:"四国",ehime:"四国",kochi:"四国",
+ fukuoka:"九州",saga:"九州",nagasaki:"九州",kumamoto:"九州",oita:"九州",miyazaki:"九州",kagoshima:"九州",okinawa:"沖縄",
+ dracula:"海外",franken:"海外",wolfman:"海外",mummy:"海外",zombie:"海外",jiangshi:"海外",yeti:"海外",banshee:"海外",golem:"海外",medusa:"海外",
+};
+function regionOf(id){return REGION[id]||"不明"}
+/* チーム内で同じ地方が2体以上いると全員に地縁ボーナス */
+function teamRegionBonus(team){
+  const c={};team.forEach(t=>{const r=regionOf(t.y.id);c[r]=(c[r]||0)+1});
+  let best=1;for(const k in c)best=Math.max(best,c[k]);
+  return best>=3?{atk:0.20,def:0.20,label:"三妖の絆"}:best>=2?{atk:0.10,def:0.10,label:"同郷の誼"}:null;
+}
+const SPGAUGE=100; // 妖力満タン
+const TEAM_SIZE=3;
+
+/* ================= 妖怪イラスト(SVG手描き風) ================= */
+const K2="#241f18",ST=`stroke="${K2}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"`;
+const Cc=(x,y,r,f)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${f}" ${ST}/>`;
+const Cn=(x,y,r,f)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${f}"/>`;
+const Ee=(x,y,rx,ry,f,rot=0)=>`<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${f}" ${ST}${rot?` transform="rotate(${rot} ${x} ${y})"`:""}/>`;
+const Enn=(x,y,rx,ry,f,rot=0)=>`<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${f}"${rot?` transform="rotate(${rot} ${x} ${y})"`:""}/>`;
+const Pp=(d,f)=>`<path d="${d}" fill="${f}" ${ST}/>`;
+const PnA=(d,f)=>`<path d="${d}" fill="${f}"/>`;
+const Ln=(d,c=K2,w=2.2)=>`<path d="${d}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+const Rr=(x,y,w,h,rx,f)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="${f}" ${ST}/>`;
+const dots=(y=50,dx=10,c=K2,r=3.2)=>Cn(50-dx,y,r,c)+Cn(50+dx,y,r,c);
+const angry=(y=48,dx=10)=>Ln(`M${50-dx-6} ${y-6} L${50-dx+4} ${y-2}`)+Ln(`M${50+dx+6} ${y-6} L${50+dx-4} ${y-2}`)+dots(y+4,dx);
+const closedE=(y=50,dx=10)=>Ln(`M${50-dx-4} ${y} Q${50-dx} ${y+4} ${50-dx+4} ${y}`)+Ln(`M${50+dx-4} ${y} Q${50+dx} ${y+4} ${50+dx+4} ${y}`);
+const smile=(y=61)=>Ln(`M43 ${y} Q50 ${y+6} 57 ${y}`);
+const fangs=(y=61)=>Ln(`M40 ${y} Q50 ${y+8} 60 ${y}`)+PnA(`M42 ${y+1} l5 .8 -2.4 5.4 Z`,"#fff")+PnA(`M58 ${y+1} l-5 .8 2.4 5.4 Z`,"#fff");
+const openM=(y=59)=>Pp(`M44 ${y} Q50 ${y-3} 56 ${y} Q57 ${y+9} 50 ${y+10} Q43 ${y+9} 44 ${y} Z`,"#8c2f39");
+const blush=(y=57,dx=16)=>Enn(50-dx,y,4.2,2.6,"rgba(255,110,90,.45)")+Enn(50+dx,y,4.2,2.6,"rgba(255,110,90,.45)");
+const headC=(f,cy=54,r=26)=>Cc(50,cy,r,f);
+const hornsY=(f="#f2e3c0")=>Pp("M38 34 L31 13 L47 27 Z",f)+Pp("M62 34 L69 13 L53 27 Z",f);
+const maneS=f=>Pp("M25 50 Q23 22 50 20 Q77 22 75 50 L69 41 L63 48 L57 39 L50 48 L43 39 L37 48 L31 41 Z",f);
+const backHair=(f=K2)=>PnA("M25 34 Q50 16 75 34 L78 86 Q64 74 50 79 Q36 74 22 86 Z",f);
+const fringe=(f=K2)=>PnA("M28 46 Q28 26 50 26 Q72 26 72 46 Q61 36 50 39 Q39 36 28 46 Z",f);
+const bob=(f=K2)=>Pp("M27 54 Q26 24 50 24 Q74 24 73 54 L65 45 Q57 51 50 51 Q43 51 35 45 Z",f);
+const earsFox=(f,inner="#ffb3c0")=>Pp("M33 36 L26 11 L49 26 Z",f)+Pp("M67 36 L74 11 L51 26 Z",f)+PnA("M36 29 L32 18 L44 25 Z",inner)+PnA("M64 29 L68 18 L56 25 Z",inner);
+const muzzle=()=>Enn(50,60,11,8,"#fff")+Cn(50,56,2.6,K2)+Ln("M50 59 V63")+Ln("M45 65 Q50 68 55 65");
+const ghostB=f=>Pp("M28 44 Q28 18 50 18 Q72 18 72 44 L72 76 L65 68 L58 78 L50 68 L42 78 L35 68 L28 76 Z",f);
+const wavesF=(f="#3a6ea5",y=90)=>PnA(`M8 ${y} Q16 ${y-9} 24 ${y} T40 ${y} T56 ${y} T72 ${y} T88 ${y} L92 100 L8 100 Z`,f);
+const snowF=(x,y)=>Ln(`M${x-4} ${y} H${x+4} M${x} ${y-4} V${y+4} M${x-3} ${y-3} L${x+3} ${y+3} M${x+3} ${y-3} L${x-3} ${y+3}`,"#cfe8ff",1.6);
+const hito=(x,y,f="#9be3ff")=>PnA(`M${x} ${y-8} Q${x+9} ${y-4} ${x+8} ${y+3} Q${x+7} ${y+9} ${x} ${y+9} Q${x-8} ${y+9} ${x-8} ${y+1} Q${x-8} ${y-5} ${x} ${y-8} Z`,f)+Ln(`M${x-8} ${y+2} Q${x-18} ${y+5} ${x-23} ${y-1}`,f,3);
+const necks=(xs,f,eye=K2)=>xs.map(([x,h])=>Ln(`M${x} 98 Q${x-7} ${h+26} ${x} ${h+7}`,f,6)+Cc(x,h,6.5,f)+Cn(x-2,h-1,1.8,eye)).join("");
+const strawCoat=(f="#c9a227")=>Pp("M27 74 Q50 64 73 74 L78 96 L22 96 Z",f)+Ln("M38 74 L34 94","#8a6d1c")+Ln("M50 70 L50 95","#8a6d1c")+Ln("M62 74 L66 94","#8a6d1c");
+const ART={
+hokkaido:()=>headC("#ffdfba",60,18)+dots(60,7,K2,2.6)+smile(66)+blush(64,11)+Pp("M16 42 Q50 8 84 42 Q50 56 16 42 Z","#5cb85c")+Ln("M50 22 V44","#3d7a3d")+Ln("M30 40 Q50 31 70 40","#3d7a3d"),
+aomori:()=>hornsY()+maneS("#1e2a4a")+headC("#7fa8ff")+angry()+fangs(),
+iwate:()=>headC("#ffdfba")+bob()+dots(52,9)+smile(62)+blush()+Pp("M34 78 L50 68 L66 78 L68 96 L32 96 Z","#c0392b")+Ln("M50 70 V95","#8c2f39"),
+miyagi:()=>Pp("M30 92 Q28 66 38 60 L62 60 Q72 66 70 92 Z","#7a5a3a")+headC("#ff9a3d",44,24)+Pp("M42 22 Q50 14 58 22 L54 28 Q50 24 46 28 Z","#5f8a3c")+Ln("M50 20 Q50 14 54 12","#5f8a3c",3)+dots(42,9)+smile(52)+Enn(38,50,4,2.6,"#f2a0a0")+Enn(62,50,4,2.6,"#f2a0a0")+Cn(30,78,5,"#ff9a3d")+Cn(40,86,5,"#ff9a3d")+Cn(24,88,4.5,"#ff9a3d"),
+akita:()=>maneS("#f5f0e6")+hornsY()+headC("#d64535")+angry()+fangs()+Pp("M72 56 L92 40 L88 34 L70 49 Z","#cfd8dc")+Rr(69,52,7,8,2,"#6d4c2f"),
+yamagata:()=>backHair("#e8e4da")+headC("#e8c9a0")+fringe("#e8e4da")+angry(48,9)+openM(60),
+fukushima:()=>backHair("#cfc8ba")+headC("#d9b48f")+hornsY("#e8d8b0")+angry(48,9)+fangs()+Ln("M18 82 L34 74","#f5f0e6",4)+Cn(18,82,3.5,"#f5f0e6")+Cn(34,74,3.5,"#f5f0e6"),
+ibaraki:()=>headC("#8fa7c9",42,24)+dots(42,9)+openM(52)+Enn(22,28,8,3.5,"#fff")+Enn(80,24,9,3.5,"#fff")+Pp("M6 98 L30 64 L50 98 Z","#4a5d78")+Pp("M40 98 L66 58 L94 98 Z","#3b4c63"),
+tochigi:()=>[...Array(9)].map((_,i)=>`<g transform="rotate(${(i-4)*17} 50 88)">${Pp("M50 88 Q42 52 50 34 Q58 52 50 88","#f6c453")}</g>`).join("")+earsFox("#f6c453")+headC("#f6c453")+Enn(50,61,11,8,"#fff")+Cn(50,57,2.6,K2)+Ln("M36 47 L46 50")+Ln("M64 47 L54 50")+PnA("M38 40 l7 3 -6 3 Z","#d64535")+PnA("M62 40 l-7 3 6 3 Z","#d64535"),
+gunma:()=>earsFox("#f5f0e6")+headC("#f5f0e6")+muzzle()+dots(50,9,K2,2.6)+Ln("M78 82 Q86 62 80 44","#7a9e4f",2.6)+Enn(80,46,3,5,"#f6c453",20)+Enn(84,54,3,5,"#f6c453",30)+Enn(78,60,3,5,"#f6c453",10),
+saitama:()=>headC("#ffdfba")+bob()+dots(50,9)+Pp("M22 64 Q50 52 80 66 L76 86 Q50 72 26 84 Z","#7a5ca8")+Ln("M70 66 Q74 74 72 84","#4d3a70"),
+chiba:()=>Pp("M24 90 Q24 30 50 30 Q76 30 76 90 Z","#20242e")+Cn(42,58,5,"#fff")+Cn(58,58,5,"#fff")+Cn(42,58,2.2,K2)+Cn(58,58,2.2,K2)+Ln("M42 72 Q50 78 58 72","#fff")+wavesF(),
+tokyo:()=>PnA("M6 74 H94 V100 H6 Z","#1f3a5c")+Ee(50,58,17,9,"#bfe6ff")+Pp("M67 58 L82 48 L82 68 Z","#bfe6ff")+Cn(42,56,2.4,K2)+Ln("M40 74 Q50 80 60 74","#7fb4d9")+hito(24,36)+hito(78,30,"#c8f2d0"),
+kanagawa:()=>necks([[26,44],[38,32],[62,32],[74,44]],"#3aa87f")+Ln("M50 98 Q42 60 50 34","#2e7d5b",8)+Cc(50,30,10,"#3aa87f")+Cn(46,28,2.2,K2)+Cn(54,28,2.2,K2)+Pp("M44 22 L40 10 L48 18 Z","#f6c453")+Pp("M56 22 L60 10 L52 18 Z","#f6c453")+Ln("M46 36 Q50 39 54 36","#1e5c42"),
+niigata:()=>backHair()+headC("#eef4f8")+fringe()+Ln("M38 49 Q42 52 46 50")+Ln("M62 49 Q58 52 54 50")+Cn(50,61,2.2,"#8c2f39")+snowF(16,30)+snowF(84,38)+snowF(22,74)+snowF(80,76),
+toyama:()=>PnA("M36 32 Q50 22 64 32 L60 40 Q50 34 40 40 Z","#20242e")+Rr(43,22,14,10,2,"#20242e")+headC("#d64535")+Ln("M34 44 Q40 40 46 44","#f5f0e6",4)+Ln("M66 44 Q60 40 54 44","#f5f0e6",4)+dots(50,11)+Pp("M46 52 Q50 50 54 52 L51 76 Q50 78 49 76 Z","#b03a2e")+Ln("M42 66 Q46 70 48 68"),
+ishikawa:()=>hornsY("#e8d8b0")+headC("#e67e22")+angry()+fangs()+strawCoat()+Pp("M74 60 L92 46 L89 41 L72 54 Z","#cfd8dc"),
+fukui:()=>Pp("M28 62 Q28 22 50 22 Q72 22 72 62 L72 80 L28 80 Z","#f5f0e6")+Cc(50,52,16,"#ffdfba")+closedE(50,7)+smile(59)+blush(56,11)+Pp("M70 82 Q84 78 90 66 Q90 82 78 90 Q70 92 70 82 Z","#3aa8a0"),
+yamanashi:()=>Ee(50,62,24,17,"#e05d44")+headC("#ffd9a8",38,15)+closedE(36,7)+smile(43)+Pp("M28 30 Q22 18 32 14 Q30 24 36 26 Z","#e05d44")+Pp("M72 30 Q78 18 68 14 Q70 24 64 26 Z","#e05d44")+Pp("M20 58 Q4 50 10 36 Q18 44 26 42 Q30 54 20 58 Z","#e05d44")+Pp("M80 58 Q96 50 90 36 Q82 44 74 42 Q70 54 80 58 Z","#e05d44")+Ln("M36 76 L30 86")+Ln("M46 78 L44 88")+Ln("M54 78 L56 88")+Ln("M64 76 L70 86")+Ln("M40 58 Q50 54 60 58","#8c2f39",3)+Ln("M38 66 Q50 62 62 66","#8c2f39",3),
+nagano:()=>Rr(28,52,44,32,7,"#7cb342")+Ln("M28 62 H72","#4e7a29")+Ln("M28 74 H72","#4e7a29")+earsFox("#f6c453")+Cc(50,42,14,"#f6c453")+dots(42,5,K2,2.2)+Enn(50,47,6,4,"#fff")+Cn(50,45,1.8,K2),
+gifu:()=>Ln("M20 20 L38 40","#8d99ae",5)+Ln("M80 20 L62 40","#8d99ae",5)+Pp("M14 22 L26 14 L30 24 Z","#cfd8dc")+Pp("M86 22 L74 14 L70 24 Z","#cfd8dc")+headC("#c98f6b")+Ln("M50 28 V80")+Ln("M30 44 L40 48")+Cn(38,54,3,K2)+Ln("M70 44 L60 48")+Cn(62,54,3,K2)+Ln("M34 64 Q40 69 46 65")+Ln("M66 64 Q60 69 54 65")+PnA("M36 65 l4 .6 -2 4.4 Z","#fff")+PnA("M64 65 l-4 .6 2 4.4 Z","#fff"),
+shizuoka:()=>Pp("M26 82 Q20 52 42 44 Q66 36 78 56 Q86 78 66 88 Q40 94 26 82 Z","#8d99ae")+closedE(60,10)+PnA("M40 66 q-3 9 0 11 q5 -2 0 -11 Z","#7fd4ff")+PnA("M60 66 q3 9 0 11 q-5 -2 0 -11 Z","#7fd4ff")+Ln("M44 78 Q50 74 56 78")+Enn(34,52,5,3,"#5f7a4a",-20)+Enn(64,48,4,2.6,"#5f7a4a",15),
+aichi:()=>PnA("M10 92 Q6 60 22 46 Q40 30 50 30 Q74 30 82 50 Q90 68 86 92 Z","#4d8fd1")+Pp("M20 44 Q10 34 18 24 Q22 34 32 34 Q30 42 20 44 Z","#7db8ea")+Pp("M50 26 Q46 14 56 10 Q54 20 64 22 Q60 30 50 26 Z","#7db8ea")+Cn(22,26,3.4,"#bfe6ff")+Cn(70,20,3,"#bfe6ff")+Cn(86,38,3.4,"#bfe6ff")+dots(56,10,"#fff",4.4)+Cn(40,56,2,K2)+Cn(60,56,2,K2)+PnA("M42 66 Q50 74 58 66 Q54 72 50 72 Q46 72 42 66 Z","#1d3a5c")+Ln("M28 78 Q36 74 44 78","#bfe6ff",2.4)+Ln("M56 80 Q64 76 72 80","#bfe6ff",2.4),
+mie:()=>headC("#a8977f",40,21)+dots(40,8)+openM(50)+Ee(50,84,17,9,"#5d4e3c")+Cn(36,74,3.4,"#5d4e3c")+Cn(43,71,3.4,"#5d4e3c")+Cn(50,70,3.4,"#5d4e3c")+Cn(57,71,3.4,"#5d4e3c")+Cn(64,74,3.4,"#5d4e3c"),
+shiga:()=>PnA("M50 12 Q60 20 56 28 Q52 34 50 30 Q48 34 44 28 Q40 20 50 12 Z","#ff8a3c")+PnA("M18 50 Q26 44 30 50 Q26 56 18 50Z","#ff8a3c")+PnA("M82 50 Q74 44 70 50 Q74 56 82 50Z","#ff8a3c")+Cc(50,54,22,"#c9a227")+[0,45,90,135].map(a=>`<g transform="rotate(${a} 50 54)">${Ln("M31 54 H69","#8a6d1c")}</g>`).join("")+Cc(50,54,9,"#e8d8b0")+dots(52,4,K2,1.8)+Ln("M47 58 Q50 60 53 58"),
+kyoto:()=>maneS("#3b2b45")+hornsY()+PnA("M46 24 L50 8 L55 23 Z","#f2e3c0")+headC("#d64535",55,27)+angry(49,11)+fangs(62)+Ee(78,72,7,10,"#c98f6b")+Ee(78,60,5,6,"#c98f6b")+Ln("M72 62 Q78 56 84 62","#8a6d1c"),
+osaka:()=>backHair("#2b2038")+hornsY()+headC("#9b6bd6")+angry()+fangs()+PnA("M76 80 l6 -8 2 9 Z","#e8d8b0")+PnA("M84 76 l7 -6 0 9 Z","#e8d8b0"),
+hyogo:()=>backHair()+ghostB("#eef4f8")+fringe()+closedE(46,9)+Ln("M44 60 Q50 64 56 60")+Ee(22,88,10,3.5,"#f5f5f5")+Ee(22,82,10,3.5,"#f5f5f5")+Ee(22,76,10,3.5,"#f5f5f5")+hito(82,34),
+nara:()=>headC("#6b7fd6")+PnA("M25 52 Q25 20 50 20 Q75 20 75 52 L66 42 Q50 33 34 42 Z","#5d4037")+angry()+fangs()+Ln("M34 74 Q50 82 66 74","#5d4037",5),
+wakayama:()=>Pp("M32 70 Q27 32 50 30 Q73 32 68 70 Q62 79 40 79 Q34 77 32 70 Z","#7d6b91")+Cn(50,50,9.5,"#fff")+Cn(50,50,4,K2)+Ln("M44 64 Q50 68 56 64")+Ln("M50 79 V92",K2,6)+Rr(42,90,17,6,2,K2)+Ln("M36 34 l5 5 M42 30 l3 6","#5d4e3c"),
+tottori:()=>Cc(52,56,26,"#a9743c")+PnA("M52 30 A26 26 0 0 1 78 56 L52 56 Z","#8a5a28")+Ln("M34 42 Q44 38 52 42","#7a4a20",2.4)+Ln("M40 70 Q50 74 62 70","#7a4a20",2.4)+Cn(64,48,2.6,"#7a4a20")+Cn(38,62,2.4,"#7a4a20")+dots(52,9)+smile(62)+Enn(42,58,4,2.6,"#f2a0a0")+Enn(62,58,4,2.6,"#f2a0a0")+Ln("M8 44 H20","#cfc3ea",2.6)+Ln("M4 56 H18","#cfc3ea",2.6)+Ln("M8 68 H20","#cfc3ea",2.6)+Cn(84,84,4,"#8a5a28")+Cn(20,86,3,"#8a5a28"),
+shimane:()=>necks([[16,46],[27,32],[38,24],[62,24],[73,32],[84,46]],"#5d3a8c","#ff4d4d")+Ln("M50 98 Q44 58 50 32","#452a6b",8)+Cc(50,28,10,"#5d3a8c")+Cn(46,26,2.2,"#ff4d4d")+Cn(54,26,2.2,"#ff4d4d")+Ln("M45 33 Q50 37 55 33","#2d1a4a")+PnA("M50 38 l-2 5 2 -1 2 1 Z","#ff4d4d"),
+okayama:()=>hornsY()+headC("#c05a2e")+Cn(50,25,5.5,K2)+Ln("M44 29 H56")+angry()+fangs()+PnA("M22 84 H78 L74 98 H26 Z","#6b6b6b")+Ln("M36 84 V97","#4a4a4a")+Ln("M50 84 V97","#4a4a4a")+Ln("M64 84 V97","#4a4a4a")+Ln("M22 91 H78","#4a4a4a"),
+hiroshima:()=>Pp("M18 94 L36 68 H64 L82 94 Z","#3b4c63")+headC("#e8c9a0",48,22)+PnA("M30 42 Q30 28 50 28 Q70 28 70 42 L62 36 H38 Z",K2)+PnA("M42 24 Q50 18 58 24 L54 30 Q50 27 46 30 Z",K2)+Ln("M38 48 H48")+Ln("M62 48 H52")+Ln("M44 60 Q50 63 56 60")+Cn(50,80,3.4,"#f5f0e6"),
+yamaguchi:()=>wavesF("#2c4a6b")+ghostB("#dfe6ef")+PnA("M28 44 Q28 26 50 24 Q72 26 72 44 Z","#8c2f39")+Pp("M44 26 Q38 8 46 6 L49 24 Z","#f6c453")+Pp("M56 26 Q62 8 54 6 L51 24 Z","#f6c453")+closedE(52,9)+Ln("M44 64 Q50 60 56 64"),
+tokushima:()=>headC("#ffd9a8",50,22)+Ln("M40 44 Q44 41 48 44")+Ln("M60 44 Q56 41 52 44")+openM(56)+PnA("M62 60 q4 8 1 10 q-5 -2 -1 -10 Z","#7fd4ff")+strawCoat()+Ln("M42 32 L40 26")+Ln("M50 30 L50 24")+Ln("M58 32 L60 26"),
+kagawa:()=>Pp("M42 22 Q48 10 62 14 Q56 26 44 24 Z","#5cb85c")+Ln("M46 24 L42 32","#3d7a3d")+Pp("M35 36 L31 22 L45 30 Z","#5d4e3c")+Pp("M65 36 L69 22 L55 30 Z","#5d4e3c")+headC("#b08b5e")+Enn(41,50,7.5,8.5,"#5d4e3c")+Enn(59,50,7.5,8.5,"#5d4e3c")+Cn(41,50,3,"#fff")+Cn(59,50,3,"#fff")+Cn(41,50,1.4,K2)+Cn(59,50,1.4,K2)+Enn(50,62,9,7,"#e8d8b0")+Cn(50,58,2.4,K2)+Ln("M45 66 Q50 69 55 66"),
+ehime:()=>Pp("M34 34 Q14 28 16 10 Q28 16 40 27 Z","#e8d8b0")+Pp("M66 34 Q86 28 84 10 Q72 16 60 27 Z","#e8d8b0")+headC("#5d4037")+Ln("M36 44 L46 48","#ff4d4d")+Ln("M64 44 L54 48","#ff4d4d")+Cn(40,52,3,"#ff4d4d")+Cn(60,52,3,"#ff4d4d")+fangs(62)+Ln("M20 76 L30 68")+Ln("M80 76 L70 68"),
+kochi:()=>Ee(50,26,12,4.5,"#d8ecb0")+headC("#5cb85c",54,22)+dots(50,8)+Pp("M45 58 H55 L50 65 Z","#f6a623")+blush(56,13)+Ln("M24 70 Q18 60 24 52","#3d7a3d",2.6)+Ln("M76 70 Q82 60 76 52","#3d7a3d",2.6),
+fukuoka:()=>Rr(24,36,52,46,5,"#8d99ae")+Ln("M24 52 H76","#6b7684")+Ln("M24 68 H76","#6b7684")+Ln("M42 36 V52 M58 52 V68 M42 68 V82","#6b7684")+Cn(42,58,4.5,"#fff")+Cn(58,58,4.5,"#fff")+Cn(42,59,2,K2)+Cn(58,59,2,K2)+Rr(32,82,10,10,2,"#6b7684")+Rr(58,82,10,10,2,"#6b7684"),
+saga:()=>Pp("M34 36 L29 15 L47 27 Z","#22202b")+Pp("M66 36 L71 15 L53 27 Z","#22202b")+Ln("M20 78 Q10 66 18 54","#22202b",5)+Ln("M28 82 Q16 74 20 60","#22202b",5)+headC("#22202b")+Cn(42,52,4.5,"#f6c453")+Cn(58,52,4.5,"#f6c453")+Ln("M42 48 V56",K2,1.6)+Ln("M58 48 V56",K2,1.6)+Ln("M26 58 L36 60","#fff",1.6)+Ln("M74 58 L64 60","#fff",1.6)+PnA("M46 62 l4 3 4 -3 -4 6 Z","#fff")+hito(82,30,"#9be3ff"),
+nagasaki:()=>wavesF("#2c5f8a",92)+Pp("M14 58 Q34 40 58 44 Q74 46 86 40 Q80 52 82 58 Q80 64 86 76 Q74 70 58 72 Q34 76 14 58 Z","#6b8fb0")+Pp("M58 46 L66 26 L72 48 Z","#557a9c")+Pp("M20 58 Q10 62 6 70 Q16 68 22 66 Z","#557a9c")+Ln("M84 40 L92 34 M84 76 L92 82",K2,2)+Ln("M78 42 L82 36 M80 50 L85 46 M80 66 L85 70 M78 74 L82 80","#3a5a76",2)+Cn(30,54,4.5,"#20242e")+Cn(31,53,1.6,"#fff")+Ln("M18 62 Q30 66 42 62",K2,2.4)+Pp("M20 60 l5 3 -1 3 Z","#fff")+Pp("M28 60 l5 3 -1 3 Z","#fff")+Ee(48,52,5,3,"rgba(255,255,255,.4)"),
+kumamoto:()=>headC("#8d99ae",46,21)+dots(46,8)+Ln("M44 56 H56")+strawCoat()+Ln("M82 36 L76 92","#6d4c2f",3.5)+Cn(82,34,3.5,"#6d4c2f"),
+oita:()=>Ln("M20 32 Q28 22 20 12","#cfe8ff",3)+Ln("M50 22 Q58 14 50 4","#cfe8ff",3)+Ln("M80 32 Q72 22 80 12","#cfe8ff",3)+hornsY()+headC("#d64535",56,24)+angry(52)+fangs(64)+blush(60,15),
+miyazaki:()=>maneS("#3d4a2b")+headC("#7a9e4f")+Cn(42,48,5,"#fff")+Cn(58,48,5,"#fff")+Cn(42,49,2,K2)+Cn(58,49,2,K2)+PnA("M36 58 Q50 68 64 58 L64 64 Q50 74 36 64 Z","#fff")+Ln("M43 60 V68 M50 63 V71 M57 60 V68",K2,1.4)+Ln("M36 58 Q50 68 64 58"),
+kagoshima:()=>Pp("M18 76 Q30 40 50 44 Q68 48 78 26 L88 34 Q78 62 56 58 Q38 54 30 84 Z","#f5f0e6")+Cn(76,36,2.6,K2)+Cn(84,40,2.6,K2)+Ln("M76 46 Q81 49 86 45"),
+okinawa:()=>maneS("#e05d44")+headC("#c98f6b",56,22)+dots(54,8)+PnA("M44 62 Q50 68 56 62 L56 64 Q50 70 44 64 Z","#fff")+Ln("M44 62 Q50 68 56 62")+blush(60,13)+Pp("M12 84 Q20 70 34 72 Q26 84 12 84 Z","#3d7a3d")+Pp("M88 84 Q80 70 66 72 Q74 84 88 84 Z","#3d7a3d"),
+dracula:()=>Pp("M20 96 Q22 62 36 56 L50 66 L64 56 Q78 62 80 96 Z","#3b0d17")+headC("#e8eef4",50,24)+PnA("M27 50 Q27 26 50 26 Q73 26 73 50 L65 39 L57 43 L50 52 L43 43 L35 39 Z",K2)+Ln("M38 52 L47 55")+Ln("M62 52 L53 55")+Cn(42,58,2.6,"#8c1f2f")+Cn(58,58,2.6,"#8c1f2f")+Ln("M42 66 Q50 71 58 66")+PnA("M43 67 l4 .6 -2 5.4 Z","#fff")+PnA("M57 67 l-4 .6 2 5.4 Z","#fff"),
+franken:()=>Rr(27,24,46,12,2,K2)+Pp("M30 34 H70 L72 64 Q72 82 50 82 Q28 82 28 64 Z","#7a9e4f")+Rr(16,54,9,7,2,"#8d99ae")+Rr(75,54,9,7,2,"#8d99ae")+Ln("M38 42 L54 42")+Ln("M41 39 V45 M47 39 V45 M52 39 V45",K2,1.4)+Cn(41,52,4,"#fff")+Cn(41,52,1.8,K2)+Cn(60,54,5,"#fff")+Cn(60,54,2,K2)+Ln("M41 70 H59")+Ln("M45 67 V73 M52 67 V73",K2,1.4),
+wolfman:()=>Cn(80,22,10,"#f6e7b2")+Pp("M33 36 L27 12 L48 26 Z","#7d8794")+Pp("M67 36 L73 12 L52 26 Z","#7d8794")+headC("#7d8794")+PnA("M24 58 l10 -3 -8 8 Z","#7d8794")+PnA("M76 58 l-10 -3 8 8 Z","#7d8794")+Enn(50,61,12,9,"#e8eef4")+Cn(50,56,3,K2)+Ln("M36 46 L46 49","#f6c453",3)+Ln("M64 46 L54 49","#f6c453",3)+Cn(42,51,2.4,K2)+Cn(58,51,2.4,K2)+Ln("M43 66 Q50 70 57 66")+PnA("M44 66 l4 .6 -2 4.8 Z","#fff")+PnA("M56 66 l-4 .6 2 4.8 Z","#fff"),
+mummy:()=>headC("#e8dcc2")+PnA("M25 42 Q50 34 75 42 L75 49 Q50 41 25 49 Z","#d9ccae")+PnA("M25 60 Q50 52 75 60 L75 67 Q50 59 25 67 Z","#d9ccae")+PnA("M28 70 Q50 64 72 70 L70 77 Q50 71 30 77 Z","#d9ccae")+Cn(44,53,5,"#fff")+Cn(44,53,2.2,K2)+Ln("M56 52 L64 54")+Ln("M72 62 Q84 70 80 84","#d9ccae",4),
+zombie:()=>PnA("M32 32 l6 8 4 -10 5 9 5 -9 4 10 6 -8 -2 14 -30 0 Z","#3d4a2b")+headC("#8fbf6b")+Ln("M37 45 L45 53")+Ln("M45 45 L37 53")+Cn(60,54,5,"#fff")+Cn(60,56,2.2,K2)+openM(62)+Ln("M62 34 L72 40")+Ln("M64 33 L66 39 M68 36 L70 42",K2,1.4)+PnA("M46 70 q0 7 3 8 q3 -1 3 -8 Z","#7fd4ff"),
+jiangshi:()=>Pp("M26 38 Q50 24 74 38 L74 45 H26 Z","#20242e")+Cn(50,28,3.2,"#e05d44")+headC("#cfe6c0",58,20)+`<g transform="rotate(4 50 60)">${Rr(42,44,16,28,2,"#f6e7b2")}${Ln("M50 49 V66","#c0392b")}${Ln("M46 53 H54 M46 59 H54","#c0392b",1.6)}</g>`+Cn(35,58,2.6,K2)+Cn(65,58,2.6,K2)+blush(64,17),
+yeti:()=>Cc(50,54,28,"#eef4f8")+PnA("M24 40 l8 2 -7 5 Z","#eef4f8")+PnA("M76 40 l-8 2 7 5 Z","#eef4f8")+Enn(50,56,16,13,"#b8c4cf")+angry(50,8)+Ln("M42 64 Q50 68 58 64")+PnA("M44 65 l4 -.4 -2 -4.6 Z","#fff")+PnA("M56 65 l-4 -.4 2 -4.6 Z","#fff")+snowF(14,24)+snowF(86,28),
+banshee:()=>backHair("#8a9a8a")+ghostB("#c8d8c8")+fringe("#8a9a8a")+Cn(42,46,3.8,K2)+Cn(58,46,3.8,K2)+Ee(50,62,6.5,8.5,"#241f18")+Ln("M16 40 Q12 48 16 56","#cfe8ff",2.4)+Ln("M10 36 Q4 48 10 60","#cfe8ff",2.4)+Ln("M84 40 Q88 48 84 56","#cfe8ff",2.4)+Ln("M90 36 Q96 48 90 60","#cfe8ff",2.4),
+golem:()=>Rr(26,32,48,44,6,"#8d99ae")+PnA("M26 48 h20 v-6 h-20 Z","#7b8694")+PnA("M54 60 h20 v8 h-20 Z","#7b8694")+Ln("M34 76 L40 66 M62 32 L58 40")+Rr(37,48,8,7,1,"#6fe3c1")+Rr(55,48,8,7,1,"#6fe3c1")+Ln("M42 68 H58")+Pp("M46 40 L50 34 L54 40 Z","#6fe3c1"),
+medusa:()=>[[28,20],[38,11],[50,7],[62,11],[72,20]].map(([hx,hy])=>Ln(`M${50+(hx-50)*.35} 36 Q${hx} ${hy+15} ${hx} ${hy+5}`,"#4f8f4f",4)+Cc(hx,hy,4.2,"#5cb85c")+Cn(hx-1.2,hy-1,1.3,K2)+Ln(`M${hx} ${hy-4} v-4`,"#e05d44",1.5)).join("")+headC("#9fd6a0",56,22)+angry(52,9)+Ln("M44 66 Q50 69 56 66")+blush(62,14),
+};
+function art(y){const f=ART[y.id]||(()=>headC("#8a8fa3")+dots()+smile());
+ return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${y.name}">${Cn(50,55,37,"rgba(20,18,31,.08)")}${f()}</svg>`}
+
+/* ================= 技カードのイラスト ================= */
+const spark=(x,y,c="#fff",s=1)=>Ln(`M${x} ${y-6*s} V${y+6*s} M${x-6*s} ${y} H${x+6*s} M${x-4*s} ${y-4*s} L${x+4*s} ${y+4*s} M${x+4*s} ${y-4*s} L${x-4*s} ${y+4*s}`,c,1.6);
+const WART={
+ // グー系:拳・打撃
+ g1:()=>Ee(50,56,20,17,"#e8a56b")+Ln("M36 48 H64",K2,2)+Ln("M36 56 H64",K2,2)+Ln("M36 64 H64",K2,2)+Ln("M42 40 Q50 46 58 40",K2,2)+Enn(30,56,6,9,"#e8a56b")+Ln("M30 50 V62",K2,1.8)+spark(78,34,"#ffd34d",1.3)+spark(20,40,"#ffd34d",1),
+ g2:()=>hornsY("#f2e3c0")+Ee(50,58,19,17,"#d64535")+Ln("M36 52 H64",K2,2)+Ln("M36 60 H64",K2,2)+angry(48,9)+Cn(30,58,5,"#8c2f39")+Cn(70,58,5,"#8c2f39")+spark(80,32,"#ff5a3c",1.4)+spark(18,44,"#ff5a3c",1.1),
+ g3:()=>PnA("M22 78 Q26 34 50 30 Q74 34 78 78 Z","#8d99ae")+Ln("M34 44 L30 78",K2,2)+Ln("M50 34 V80",K2,2)+Ln("M66 44 L70 78",K2,2)+Ln("M28 60 H72",K2,2)+PnA("M40 20 L46 32 L52 22 L58 34 L64 24",'none')+Ln("M38 22 L44 34 M52 20 L58 34 M64 22 L68 32","#ffd34d",2.4)+spark(50,14,"#ffd34d",1.6)+spark(24,30,"#fff",1)+spark(78,30,"#fff",1),
+ // チョキ系:刃物・風
+ c1:()=>Ln("M24 74 Q40 40 76 26","#cfd8dc",7)+Ln("M24 74 Q40 40 76 26",K2,2)+PnA("M70 20 L84 22 L76 34 Z","#eef4f8")+Ln("M70 20 L84 22 L76 34 Z",K2,2)+Ln("M30 70 Q34 66 40 68",K2,2)+spark(60,44,"#9be3ff",1.2)+spark(44,58,"#9be3ff",1),
+ c2:()=>Ln("M20 78 L74 24","#cfd8dc",6)+Ln("M20 78 L74 24",K2,2)+Ln("M30 82 L84 30","#b8c4cf",6)+Ln("M30 82 L84 30",K2,2)+Rr(16,74,12,10,2,"#6d4c2f")+Rr(26,78,12,10,2,"#6d4c2f")+spark(78,22,"#fff",1.3)+spark(70,32,"#9be3ff",.9),
+ c3:()=>[0,1,2].map(i=>Ln(`M${20+i*8} 80 Q50 ${40+i*6} ${80-i*6} ${24+i*10}`,i===1?"#6fe3c1":"#cfe8ff",4)).join("")+PnA("M74 20 l10 3 -7 8 Z","#eef4f8")+spark(40,40,"#6fe3c1",1.4)+spark(64,50,"#9be3ff",1.1)+spark(28,60,"#fff",.9)+Ln("M30 74 Q50 34 76 26",K2,1.6),
+ // パー系:護符・団扇・結界
+ p1:()=>Rr(38,24,24,54,3,"#f6e7b2")+Ln("M50 30 V72","#c0392b",2.6)+Ln("M44 38 H56 M44 48 H56 M44 58 H56","#c0392b",2)+Cn(50,26,3,"#c0392b")+spark(24,40,"#ffd34d",1)+spark(76,44,"#ffd34d",1)+PnA("M62 68 q8 4 6 12",'none')+Ln("M60 70 Q70 74 66 84","#ffd34d",2),
+ p2:()=>Pp("M50 76 Q18 60 20 30 Q50 34 50 30 Q50 34 80 30 Q82 60 50 76 Z","#e05d44")+Ln("M50 30 V76",K2,2)+Ln("M34 34 Q36 56 44 70",K2,1.8)+Ln("M66 34 Q64 56 56 70",K2,1.8)+Rr(46,74,8,16,2,"#6d4c2f")+Ln("M24 20 Q30 26 26 32","#9be3ff",2.4)+Ln("M78 22 Q72 28 76 34","#9be3ff",2.4),
+ p3:()=>Cc(50,54,28,"rgba(111,227,193,.18)")+[0,60,120,180,240,300].map(a=>`<g transform="rotate(${a} 50 54)">${Ln("M50 26 V32","#6fe3c1",2.4)}</g>`).join("")+Cc(50,54,20,"none")+PnA("M50 40 l4 8 9 1 -6.5 6 2 9 -8.5 -4.5 -8.5 4.5 2 -9 -6.5 -6 9 -1 Z","#f7d774")+spark(50,20,"#6fe3c1",1.3)+spark(22,54,"#6fe3c1",1)+spark(78,54,"#6fe3c1",1),
+ // 特殊技
+ gS1:()=>Pp("M50 16 L78 28 V52 Q78 78 50 88 Q22 78 22 52 V28 Z","#8d99ae")+Pp("M50 16 L78 28 V52 Q78 78 50 88 Q22 78 22 52 V28 Z",'none')+Ln("M50 16 L78 28 V52 Q78 78 50 88 Q22 78 22 52 V28 Z",K2,2.4)+Ln("M50 20 V84",K2,1.8)+PnA("M40 48 l8 10 16 -20 -4 -4 -12 14 -4 -4 Z","#6fe3c1")+spark(30,32,"#ffd34d",1),
+ cS1:()=>Ee(50,52,30,20,"#f6e7b2")+Cn(50,52,12,"#fff")+Cn(50,52,7,"#3a5a8a")+Cn(50,52,3.4,K2)+Cn(47,49,1.6,"#fff")+Ln("M20 52 Q50 34 80 52 Q50 70 20 52",K2,2)+spark(78,30,"#9be3ff",1.1)+spark(20,72,"#9be3ff",1)+Ln("M50 22 Q52 26 50 30 M74 40 Q70 42 66 40",K2,1.4),
+ pS1:()=>Cc(50,54,28,"rgba(94,234,212,.16)")+Ee(50,54,26,26,"none")+Ln("M50 28 A26 26 0 0 1 76 54",'#6fe3c1',3)+Ln("M76 54 A26 26 0 0 1 50 80",'#5a9bff',3)+Ln("M50 80 A26 26 0 0 1 24 54",'#6fe3c1',3)+Ln("M24 54 A26 26 0 0 1 50 28",'#5a9bff',3)+PnA("M50 42 l3 6 7 1 -5 5 1.5 7 -6.5 -3.5 -6.5 3.5 1.5 -7 -5 -5 7 -1 Z","#fff")+spark(50,54,"#fff",1),
+ pS2:()=>Pp("M50 80 Q20 60 24 34 Q40 22 50 38 Q60 22 76 34 Q80 60 50 80 Z","#b478ff")+PnA("M50 46 Q42 54 50 62 Q58 54 50 46 Z","#5eead4")+Ln("M36 40 Q40 56 48 66","#e0c8ff",1.8)+spark(30,34,"#c8a8ff",1.1)+spark(72,36,"#c8a8ff",1.1)+PnA("M46 30 q4 -3 8 0 q-4 4 -8 0 Z","#fff"),
+ gS2:()=>Pp("M50 18 L60 40 L84 40 L64 56 L72 82 L50 66 L28 82 L36 56 L16 40 L40 40 Z","#b478ff")+Ln("M50 18 L60 40 L84 40 L64 56 L72 82 L50 66 L28 82 L36 56 L16 40 L40 40 Z",K2,2)+Cn(50,50,7,"#2b1a3a")+Ln("M50 44 Q54 50 50 56 Q46 50 50 44","#ff5a6e",2)+spark(78,24,"#c8a8ff",1)+spark(22,24,"#c8a8ff",1),
+ cS2:()=>[0,1,2].map(i=>Ln(`M${28+i*8} 82 Q50 ${34+i*8} ${72-i*4} ${28+i*8}`,i===1?"#ffd34d":"#ffe89a",4)).join("")+Cc(50,52,10,"rgba(255,217,74,.35)")+PnA("M50 40 l3 8 8 0 -6 6 2 9 -7 -5 -7 5 2 -9 -6 -6 8 0 Z","#ffd34d")+spark(30,34,"#ffd34d",1)+spark(72,36,"#ffd34d",1),
+ gS3:()=>Ee(50,58,22,17,"#d64535")+Ln("M32 52 H68",K2,2)+Ln("M32 60 H68",K2,2)+angry(48,10)+Pp("M20 84 Q10 72 18 60","none")+Ln("M12 30 Q22 44 16 60","#ff5a3c",3)+Ln("M88 30 Q78 44 84 60","#ff5a3c",3)+spark(50,20,"#ff5a3c",1.5)+Cn(28,58,5,"#8c2f39")+Cn(72,58,5,"#8c2f39"),
+ pS3:()=>Cc(50,54,28,"rgba(180,120,255,.14)")+Ln("M50 26 V82","#b478ff",2.4)+Ln("M26 40 Q50 54 74 40","#b478ff",2.4)+Ln("M26 68 Q50 54 74 68","#b478ff",2.4)+Cc(50,54,7,"#2b1a3a")+PnA("M44 30 l6 -8 6 8 Z","#ff5a6e")+PnA("M44 78 l6 8 6 -8 Z","#ff5a6e")+spark(24,54,"#c8a8ff",1)+spark(76,54,"#c8a8ff",1),
+};
+function wazaArt(w){
+  const f=WART[w.id];
+  const inner=f?f():(()=>{const e={g:"✊",c:"✌️",p:"✋"};return Ln("M30 70 H70",K2,2)})();
+  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${w.name}">${Cn(50,54,36,"rgba(20,18,31,.06)")}${inner}</svg>`;
+}
+/* 技カードのHTML(妖怪カードと同じ枠デザイン) */
+function wazaCardHTML(w,mini,extra=""){
+  const rmap={N:"rN",R:"rR",SR:"rSR",MR:"rMR"};
+  let rc,badge,body;
+  if(w.sp){ // 特殊技
+    rc=rmap[w.rar]||"rR";
+    badge=`特${w.rar}`;
+    body=`<div class="stats wstats spwstat"><span class="spdesc">${w.spText}</span></div>`;
+  }else{
+    const t=parseInt(w.id.slice(1))||0;
+    rc=t>=3?"rMR":t===2?"rSR":t===1?"rR":"rN";
+    badge=`技★${t}`;
+    body=`<div class="stats wstats">${effChips(w.eff)}</div>`;
+  }
+  return `<div class="card wcard ${mini?"mini":""} ${rc} ${extra}">
+    <div class="rar">${badge}</div><div class="fav">${handSVG(w.hand,mini?15:20)}</div>
+    <div class="art">${wazaArt(w)}</div>
+    <div class="nm">${w.name}</div><div class="pref">${HANDNAME[w.hand]}専用</div>
+    ${body}</div>`;
+}
+function effChips(eff){
+  const p=[];if(eff.atk)p.push(`<span>攻<b>+${eff.atk}</b></span>`);if(eff.def)p.push(`<span>防<b>+${eff.def}</b></span>`);if(eff.hp)p.push(`<span>HP<b>+${eff.hp}</b></span>`);
+  return p.length?p.join(""):`<span style="opacity:.6">効果なし</span>`;
+}
+
+/* ================= グー・チョキ・パーのイラスト ================= */
+const HAND_BR="#6b4a2b"; // 手の輪郭(茶)
+const HAND_SK="#fbe6c2"; // 肌色(クリーム)
+const handFace=(cx,cy,wink,sc=1)=>{
+  const eye=r=>`stroke-width:0`;
+  const L=wink
+    ? Ln(`M${cx-9*sc} ${cy} q4 -5 8 0`,HAND_BR,3) // ウインク(閉じ目)
+    : `<ellipse cx="${cx-8*sc}" cy="${cy}" rx="${3.4*sc}" ry="${4.2*sc}" fill="#3a2a1c"/><circle cx="${cx-9*sc}" cy="${cy-1.5*sc}" r="${1.2*sc}" fill="#fff"/>`;
+  const R=`<ellipse cx="${cx+8*sc}" cy="${cy}" rx="${3.4*sc}" ry="${4.2*sc}" fill="#3a2a1c"/><circle cx="${cx+7*sc}" cy="${cy-1.5*sc}" r="${1.2*sc}" fill="#fff"/>`;
+  const cheeks=`<ellipse cx="${cx-13*sc}" cy="${cy+7*sc}" rx="${4.5*sc}" ry="${3*sc}" fill="#f2a0a0"/><ellipse cx="${cx+13*sc}" cy="${cy+7*sc}" rx="${4.5*sc}" ry="${3*sc}" fill="#f2a0a0"/>`;
+  const mouth=`<path d="M${cx-5*sc} ${cy+6*sc} Q${cx} ${cy+9*sc} ${cx+5*sc} ${cy+6*sc} Q${cx+5*sc} ${cy+13*sc} ${cx} ${cy+13*sc} Q${cx-5*sc} ${cy+13*sc} ${cx-5*sc} ${cy+6*sc} Z" fill="#c0392b"/><path d="M${cx-3.5*sc} ${cy+11*sc} Q${cx} ${cy+13.5*sc} ${cx+3.5*sc} ${cy+11*sc} Q${cx} ${cy+15*sc} ${cx-3.5*sc} ${cy+11*sc} Z" fill="#e8607a"/>`;
+  return cheeks+L+R+mouth;
+};
+// 手の形(輪郭は茶色の太線で描く)
+const handShape=d=>`<path d="${d}" fill="${HAND_SK}" stroke="${HAND_BR}" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>`;
+const HAND_ART={
+ // グー(こぶし・ウインク) 画像1
+ g:()=>handShape("M26 44 Q26 30 42 28 L66 26 Q80 26 80 42 L80 66 Q80 84 54 84 L44 84 Q26 84 26 66 Z")
+   +Ln("M40 30 Q41 44 40 56",HAND_BR,2.4)+Ln("M54 28 Q55 44 54 58",HAND_BR,2.4)+Ln("M67 30 Q68 44 67 56",HAND_BR,2.4)
+   +Ln("M30 46 Q52 40 79 46",HAND_BR,2.4)                       // 親指の折り目
+   +Pp("M26 50 Q16 49 18 60 Q20 70 30 67",HAND_SK)              // 親指
+   +handFace(52,64,true,1),
+ // チョキ(ピース・両目) 画像2
+ c:()=>handShape("M44 90 Q30 90 30 72 L30 60 Q30 50 40 50 L40 60 Q41 40 40 22 Q40 13 47 13 Q54 13 54 24 L53 50 Q60 46 66 26 Q69 16 76 19 Q83 22 79 33 L69 60 Q70 74 64 84 Q58 91 47 90 Z")
+   +Ln("M47 48 Q47 32 47 20",HAND_BR,2.2)+Ln("M62 50 Q66 38 71 27",HAND_BR,2.2)
+   +handFace(52,66,false,.92),
+ // パー(ひらいた手・両目) 画像3
+ p:()=>handShape("M30 88 Q20 86 20 70 L20 54 Q20 46 27 46 Q33 46 33 54 L33 40 Q33 24 39 24 Q45 24 45 40 L45 34 Q45 16 51 16 Q57 16 57 34 L57 38 Q57 20 63 20 Q69 20 69 40 L69 50 Q69 34 74 34 Q80 34 80 50 L80 68 Q80 86 62 88 Z")
+   +Ln("M33 52 Q33 44 33 40",HAND_BR,2)+Ln("M45 44 Q45 34 45 34",HAND_BR,2)+Ln("M57 42 Q57 30 57 34",HAND_BR,2)+Ln("M69 50 Q69 42 69 42",HAND_BR,2)
+   +handFace(50,66,false,.92),
+};
+function handSVG(h,size,color){
+  const f=HAND_ART[h]||HAND_ART.g;
+  return `<svg viewBox="0 0 100 100" class="handsvg" style="width:${size}px;height:${size}px;vertical-align:middle" xmlns="http://www.w3.org/2000/svg" aria-label="${HANDNAME[h]}">${f()}</svg>`;
+}
+// 勝者の王冠(手描き風SVG)
+function crownSVG(size){
+  const G1="#ffe066",G2="#f4b21a",BR="#8a5a12";
+  const body=`<path d="M18 74 L14 34 L34 54 L50 24 L66 54 L86 34 L82 74 Z" fill="${G1}" stroke="${BR}" stroke-width="4" stroke-linejoin="round"/>`;
+  const shade=`<path d="M18 74 L14 34 L34 54 L50 24 L66 54 L86 34 L82 74 Z" fill="none"/><path d="M22 66 L79 66" stroke="${G2}" stroke-width="6" stroke-linecap="round"/>`;
+  const base=`<rect x="16" y="70" width="68" height="14" rx="5" fill="${G2}" stroke="${BR}" stroke-width="4"/>`;
+  const jewels=`<circle cx="50" cy="46" r="6" fill="#ff5a6e" stroke="${BR}" stroke-width="3"/>`+
+    `<circle cx="28" cy="60" r="4.5" fill="#5ec6ff" stroke="${BR}" stroke-width="2.6"/>`+
+    `<circle cx="72" cy="60" r="4.5" fill="#5ec6ff" stroke="${BR}" stroke-width="2.6"/>`+
+    `<circle cx="50" cy="77" r="4" fill="#5ec6ff" stroke="${BR}" stroke-width="2.4"/>`;
+  const tips=`<circle cx="14" cy="34" r="4" fill="${G1}" stroke="${BR}" stroke-width="3"/>`+
+    `<circle cx="50" cy="24" r="4.5" fill="${G1}" stroke="${BR}" stroke-width="3"/>`+
+    `<circle cx="86" cy="34" r="4" fill="${G1}" stroke="${BR}" stroke-width="3"/>`;
+  const shine=`<path d="M40 38 q4 -3 8 0" fill="none" stroke="#fff9d6" stroke-width="2.4" stroke-linecap="round"/>`;
+  return `<svg viewBox="0 0 100 100" class="crownsvg" style="width:${size}px;height:${size}px" xmlns="http://www.w3.org/2000/svg" aria-label="王冠">${base}${body}${shade}${tips}${jewels}${shine}</svg>`;
+}
+/* 見出し・ボタン用アイコン(手描き風SVG) */
+const ICON_ART={
+ oni:()=>Cc(50,54,30,"#e05d44")+Pp("M34 32 L26 12 L44 24 Z","#f2e3c0")+Pp("M66 32 L74 12 L56 24 Z","#f2e3c0")+PnA("M28 40 Q50 28 72 40 Q60 34 50 34 Q40 34 28 40 Z","#3a2016")+angry(50,11)+PnA("M40 66 Q50 74 60 66 L58 72 Q50 78 42 72 Z","#7a1f10")+Pp("M43 68 L46 74 L49 68 Z","#fff")+Pp("M57 68 L54 74 L51 68 Z","#fff")+Enn(35,62,4.5,3,"#b93a26")+Enn(65,62,4.5,3,"#b93a26"),
+ swords:()=>Ln("M22 78 L70 30","#cfd8dc",7)+Ln("M22 78 L70 30",K2,2.2)+Pp("M66 22 L80 24 L74 36 Z","#eef4f8")+Ln("M78 78 L30 30",K2,2.2)+Ln("M78 78 L30 30","#cfd8dc",7)+Ln("M78 78 L30 30",K2,2.2)+Pp("M34 22 L20 24 L26 36 Z","#eef4f8")+Rr(16,74,12,10,3,"#6d4c2f")+Rr(72,74,12,10,3,"#6d4c2f")+Cn(50,54,5,"#ffd94a"),
+ mega:()=>Pp("M20 44 L52 30 Q58 28 58 36 L58 64 Q58 72 52 70 L20 56 Z","#e05d44")+Rr(12,42,10,16,3,"#b93a26")+Pp("M58 40 Q70 42 70 50 Q70 58 58 60 Z","#f2e3c0")+Ln("M74 36 Q82 30 88 32","#ffd94a",3)+Ln("M76 50 H90","#ffd94a",3)+Ln("M74 64 Q82 70 88 68","#ffd94a",3)+Rr(24,58,8,20,3,"#8a5a28"),
+ tengu:()=>Cc(50,52,28,"#e05d44")+PnA("M26 38 Q50 24 74 38 Q62 32 50 32 Q38 32 26 38 Z","#3a2016")+angry(48,11)+Pp("M46 54 L54 54 L58 76 Q50 82 42 76 Z","#c0392b")+Enn(34,60,4.5,3,"#b93a26")+Enn(66,60,4.5,3,"#b93a26")+Ln("M40 44 L36 40","#fff",2)+Ln("M60 44 L64 40","#fff",2),
+ hammer:()=>Rr(30,22,40,22,5,"#8d99ae")+Ln("M30 33 H70",K2,2)+Rr(46,42,8,42,3,"#8a5a28")+Ln("M50 44 V82","#6d4c2f",2)+Pp("M30 22 L26 28 L30 34 Z","#6b7688")+Ln("M74 18 Q80 14 84 16","#ffd94a",2.6)+Ln("M78 30 H88","#ffd94a",2.6),
+ scroll:()=>Rr(28,18,44,64,6,"#f6e7b2")+Ee(50,18,22,6,"#e8d391")+Ee(50,82,22,6,"#d9c27a")+Ln("M36 34 H64","#8a5a28",2.4)+Ln("M36 46 H64","#8a5a28",2.4)+Ln("M36 58 H60","#8a5a28",2.4)+Ln("M36 70 H56","#8a5a28",2.4),
+ globe:()=>Cc(50,50,28,"#4d8fd1")+PnA("M30 36 Q42 28 50 38 Q58 32 66 40 Q60 48 50 44 Q40 50 30 44 Z","#5f8a3c")+PnA("M36 58 Q46 54 54 60 Q62 56 68 62 Q60 72 48 68 Q40 70 36 64 Z","#5f8a3c")+Ln("M22 50 H78","#bfe6ff",1.8)+Ee(50,50,28,28,"none")+Ln("M50 22 Q36 50 50 78 M50 22 Q64 50 50 78","#bfe6ff",1.6),
+ book:()=>Pp("M18 26 Q34 20 48 28 L48 78 Q34 70 18 76 Z","#e05d44")+Pp("M82 26 Q66 20 52 28 L52 78 Q66 70 82 76 Z","#5eead4")+Ln("M50 28 V78",K2,2.4)+Ln("M26 38 Q36 34 42 38 M26 48 Q36 44 42 48 M26 58 Q36 54 42 58","#7a1f10",2)+Ln("M58 38 Q66 34 74 38 M58 48 Q66 44 74 48 M58 58 Q66 54 74 58","#0f6e5c",2),
+ trophy:()=>Pp("M32 22 H68 L64 52 Q58 64 50 64 Q42 64 36 52 Z","#ffd94a")+Ln("M32 22 H68 L64 52 Q58 64 50 64 Q42 64 36 52 Z",K2,2.4)+Pp("M32 28 Q18 30 22 42 Q25 50 36 50","none")+Ln("M32 28 Q18 30 22 42 Q25 50 36 50",K2,2.4)+Ln("M68 28 Q82 30 78 42 Q75 50 64 50",K2,2.4)+Rr(44,64,12,8,2,"#c8901b")+Rr(36,74,28,8,3,"#8a5a28")+PnA("M42 30 q4 -3 8 0 q-4 4 -8 0 Z","#fff9d6"),
+};
+function iconSVG(name,size=24){
+  const f=ICON_ART[name];if(!f)return "";
+  return `<svg viewBox="0 0 100 100" style="width:${size}px;height:${size}px;vertical-align:-4px" xmlns="http://www.w3.org/2000/svg">${f()}</svg>`;
+}
+
+
+let save;
+function loadSave(){
+  try{const s=localStorage.getItem("youkaiking");if(s){save=JSON.parse(s);return}}catch(e){}
+  save=null;
+}
+function persist(){
+  try{localStorage.setItem("youkaiking",JSON.stringify(save))}catch(e){}
+  if(currentUser){
+    const a=getAccts();
+    if(a[currentUser]){a[currentUser].data=save;setAccts(a);scheduleSync()}
+  }
+}
+function initSave(){
+  save={cards:{},waza:{g0:1,c0:1,p0:1},wins:0,losses:0,handHist:[]};
+  // スターター:ノーマル3枚
+  const ns=YOKAI.filter(y=>y.rar==="N");
+  const picked=new Set();
+  while(picked.size<3)picked.add(ns[Math.floor(Math.random()*ns.length)].id);
+  picked.forEach(id=>save.cards[id]={n:1,g:0});
+  persist();
+}
+loadSave(); if(!save) initSave();
+if(!save.waza) save.waza={g0:1,c0:1,p0:1};
+["g0","c0","p0"].forEach(id=>{if(!save.waza[id])save.waza[id]=1});
+
+/* ================= アカウント(コレクション保存) ================= */
+const LSA="yk_accounts",LSS="yk_session";
+var currentUser=null,syncTimer=null;
+function getAccts(){try{return JSON.parse(localStorage.getItem(LSA)||"{}")}catch(e){return{}}}
+function setAccts(a){try{localStorage.setItem(LSA,JSON.stringify(a))}catch(e){}}
+async function hashPass(p){
+  try{if(window.crypto&&crypto.subtle){
+    const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("yk:"+p));
+    return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("");
+  }}catch(e){}
+  let h=7;for(const c of "yk:"+p)h=((h*31+c.charCodeAt(0))>>>0);return "x"+h.toString(16);
+}
+function authMsg(t){document.getElementById("auth-status").textContent=t}
+function normName(n){return (n||"").trim()}
+async function sbClient(){
+  if(!SUPABASE_URL||!SUPABASE_KEY)return null;
+  try{await loadSupabase()}catch(e){return null}
+  if(!sb)sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  return sb;
+}
+async function register(){
+  play("tap");
+  const name=normName(document.getElementById("auth-name").value);
+  const pass=document.getElementById("auth-pass").value;
+  if(name.length<2){authMsg("ユーザーネームは2文字以上にしてね");return}
+  if(pass.length<4){authMsg("パスワードは4文字以上にしてね");return}
+  const accts=getAccts();
+  if(accts[name]){authMsg("その名前はこの端末で登録済みです。ログインしてね");return}
+  const h=await hashPass(pass);
+  const c=await sbClient();
+  if(c){
+    try{
+      const {data:rows}=await c.from("yk_players").select("username").eq("username",name).limit(1);
+      if(rows&&rows.length){authMsg("その名前は使われています。別の名前にしてね");return}
+    }catch(e){}
+  }
+  accts[name]={pass:h,data:save}; // いままでの進行データを引き継ぐ
+  setAccts(accts);
+  try{localStorage.setItem(LSS,name)}catch(e){}
+  currentUser=name;
+  if(c){try{await c.from("yk_players").upsert({username:name,pass:h,data:save,updated_at:new Date().toISOString()})}catch(e){}}
+  enterGame();
+}
+async function login(){
+  play("tap");
+  const name=normName(document.getElementById("auth-name").value);
+  const pass=document.getElementById("auth-pass").value;
+  if(!name||!pass){authMsg("なまえとパスワードを入れてね");return}
+  const h=await hashPass(pass);
+  const accts=getAccts();
+  if(accts[name]){
+    if(accts[name].pass!==h){authMsg("パスワードがちがいます");return}
+    save=accts[name].data;fixSave();
+  }else{
+    const c=await sbClient();
+    if(!c){authMsg("この端末にその名前の記録がありません。新規登録してね");return}
+    try{
+      const {data:rows,error}=await c.from("yk_players").select("*").eq("username",name).limit(1);
+      if(error||!rows||!rows.length){authMsg("その名前の記録が見つかりません");return}
+      if(rows[0].pass!==h){authMsg("パスワードがちがいます");return}
+      save=rows[0].data||null;if(!save)initSave();fixSave();
+      accts[name]={pass:h,data:save};setAccts(accts);
+    }catch(e){authMsg("通信エラー。電波を確認してね");return}
+  }
+  try{localStorage.setItem(LSS,name)}catch(e){}
+  currentUser=name;
+  enterGame();
+}
+function fixSave(){
+  if(!save.cards)save.cards={};
+  if(!save.waza)save.waza={};
+  ["g0","c0","p0"].forEach(id=>{if(!save.waza[id])save.waza[id]=1});
+  if(!save.handHist)save.handHist=[];
+  if(typeof save.wins!=="number")save.wins=0;
+  if(typeof save.losses!=="number")save.losses=0;
+}
+function enterGame(){
+  document.getElementById("home-user").textContent="👤 "+currentUser+" の妖怪手帳";
+  persist();renderHome();go("scr-home");
+}
+function logout(){
+  if(!confirm("ログアウトしますか?(コレクションは保存されています)"))return;
+  try{localStorage.removeItem(LSS)}catch(e){}
+  currentUser=null;location.reload();
+}
+function scheduleSync(){
+  if(!currentUser||!SUPABASE_URL||!SUPABASE_KEY)return;
+  clearTimeout(syncTimer);
+  syncTimer=setTimeout(async()=>{
+    const c=await sbClient();if(!c)return;
+    const accts=getAccts();const a=accts[currentUser];if(!a)return;
+    try{await c.from("yk_players").upsert({username:currentUser,pass:a.pass,data:save,updated_at:new Date().toISOString()})}catch(e){}
+  },1500);
+}
+
+/* ================= ガチャ(カード獲得) ================= */
+function gachaOne(){ // バトル後の妖怪カード配布。敵が強い(高レベル)ほど高レアが出やすい
+  const lv=battleMode==="cpu"?cpuLevel:5;
+  // レベルに応じてレア度の確率を上げる(Lv1: MR0.5%/SR4%/R18% 〜 Lv10: MR12%/SR26%/R38%)
+  const mr=0.005+lv*0.0115;   // Lv1≒1.6% → Lv10≒12%
+  const sr=0.04 +lv*0.022;    // Lv1≒6%   → Lv10≒26%
+  const rr=0.16 +lv*0.022;    // Lv1≒18%  → Lv10≒38%
+  const r=Math.random();
+  let rar = r<mr?"MR": r<mr+sr?"SR": r<mr+sr+rr?"R":"N";
+  const pool=YOKAI.filter(y=>y.rar===rar);
+  const y=pool[Math.floor(Math.random()*pool.length)];
+  // GOLDも強い敵ほど出やすい(Lv1:3% 〜 Lv10:12%)
+  const goldChance=0.02+lv*0.01;
+  const gold=(rar==="N"||rar==="R")&&Math.random()<goldChance;
+  if(!save.cards[y.id])save.cards[y.id]={n:0,g:0};
+  const isNew = gold? save.cards[y.id].g===0 : save.cards[y.id].n===0&&save.cards[y.id].g===0;
+  if(gold)save.cards[y.id].g++;else save.cards[y.id].n++;
+  persist();
+  return {type:"yokai",yokai:y,gold,isNew};
+}
+function showGetModal(result,cb){
+  const box=document.getElementById("get-card");
+  if(result.type==="yokai"){
+    play(result.yokai.rar==="MR"?"gachaMR":result.yokai.rar==="SR"?"gachaSR":result.yokai.rar==="R"?"gachaR":"gachaN");
+    if(result.gold)setTimeout(()=>play("gold"),400);
+    box.innerHTML=cardHTML(result.yokai,result.gold,false);
+  }else{
+    const w=result.waza,t=parseInt(w.id.slice(1),10)||1;
+    play(t>=3?"gachaSR":t===2?"gachaR":"gachaN");
+    box.innerHTML=wazaCardHTML(w,false);
+  }
+  document.getElementById("get-new").textContent=result.isNew?"✨ NEW! 図鑑に登録された!":"(2枚目以降もコレクションに加算)";
+  document.getElementById("modal-get").classList.add("show");
+  getModalCb=cb;
+}
+let getModalCb=null;
+function closeGetModal(){document.getElementById("modal-get").classList.remove("show");if(getModalCb){const f=getModalCb;getModalCb=null;f()}}
+
+/* ================= 画面 ================= */
+function go(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));document.getElementById(id).classList.add("active");window.scrollTo(0,0);
+  // 画面に応じてBGMを切替
+  if(id==="scr-home")setBgmScene("top");
+  else if(id==="scr-battle")setBgmScene("battle");
+  else if(id!=="scr-auth")setBgmScene("menu");
+}
+function effText(eff){const p=[];if(eff.atk)p.push("攻撃+"+eff.atk);if(eff.def)p.push("防御+"+eff.def);if(eff.hp)p.push("HP+"+eff.hp);return p.length?p.join(" / "):"ボーナスなし"}
+function wazaDescText(w){return w.sp?w.spText:effText(w.eff)}
+function cardHTML(y,gold,mini,extra=""){
+  const s=baseStats(y,gold);
+  return `<div class="card ${mini?"mini":""} r${y.rar} ${gold?"gold":""} ${extra}">
+    <div class="rar">${y.rar}${gold?"★":""}</div><div class="fav">${handSVG(favHand(y),mini?15:20)}</div>
+    <div class="art">${art(y)}</div>
+    <div class="nm">${nameHTML(y)}</div><div class="pref">${y.pref}</div>
+    <div class="stats"><span>HP<b>${s.hp}</b></span><span>攻<b>${s.atk}</b></span><span>防<b>${s.def}</b></span></div>
+    ${gold?'<div class="goldbadge">GOLD</div>':''}</div>`;
+}
+function renderHome(){
+  const owned=YOKAI.filter(y=>save.cards[y.id]&&(save.cards[y.id].n>0||save.cards[y.id].g>0)).length;
+  document.getElementById("home-prog").textContent=owned+" / "+YOKAI.length;
+  document.getElementById("home-record").innerHTML=`<span><b>${save.wins}</b> 勝</span><span><b>${save.losses}</b> 敗</span>`;
+}
+renderHome();
+
+/* ================= レベル選択 ================= */
+const lvgrid=document.getElementById("lvgrid");
+for(let i=1;i<=10;i++){const b=document.createElement("button");b.className="lvbtn";b.textContent=i;b.onclick=()=>pickLevel(i);lvgrid.appendChild(b)}
+let battleMode="cpu", cpuLevel=1;
+function startCpuFlow(){play("select");battleMode="cpu";go("scr-level")}
+function pickLevel(lv){
+  play("levelpick");
+  cpuLevel=lv;
+  openSelect(); // カード配布はバトル開始確定時(confirmSelect)に移動
+}
+
+function goHome(){
+  if(battleMode==="online")teardownNet();
+  go("scr-home");renderHome();
+}
+/* ================= キャラ&技選択(3体編成) ================= */
+let selTeam=[], selWaza={g:"g0",c:"c0",p:"p0"}; // selTeam: [{id,gold}]
+function teamHas(id,gold){return selTeam.some(t=>t.id===id&&t.gold===gold)}
+function ownedCount(id,gold){const o=save.cards[id];if(!o)return 0;return gold?o.g:o.n}
+function teamUsed(id,gold){return selTeam.filter(t=>t.id===id&&t.gold===gold).length}
+function openSelect(){
+  // 所持数が足りないピックを除去(合成・rematchでダブりが減る場合に対応)
+  const used={};
+  selTeam=selTeam.filter(t=>{
+    const key=t.id+(t.gold?"g":"n");used[key]=(used[key]||0)+1;
+    return ownedCount(t.id,t.gold)>=used[key];
+  });
+  renderTeamSlots();
+  const grid=document.getElementById("sel-chars");grid.innerHTML="";
+  const pickedRegions=selTeam.map(t=>regionOf(t.id));
+  YOKAI.forEach(y=>{
+    const o=save.cards[y.id];if(!o)return;
+    [["n",false],["g",true]].forEach(([k,gold])=>{
+      if(o[k]<=0)return;
+      const d=document.createElement("div");
+      d.innerHTML=cardHTML(y,gold,true);
+      const el=d.firstChild;
+      el.dataset.yid=y.id;el.dataset.gold=gold?"1":"0";
+      const picks=teamUsed(y.id,gold);
+      // 選択済みメンバーと同じ地方なら「同郷」バッジ(地縁ボーナスの候補)
+      if(picks===0 && pickedRegions.includes(regionOf(y.id))){
+        el.classList.add("samereg");
+        el.insertAdjacentHTML("beforeend",`<div class="regtag">同郷!</div>`);
+      }
+      if(picks>0){el.classList.add("picked");el.insertAdjacentHTML("beforeend",`<div class="owncount" style="background:var(--gold1);color:#3d2b00">編成${picks}</div>`)}
+      el.insertAdjacentHTML("beforeend",`<div class="owncount" style="bottom:auto;top:-8px;left:auto;right:-8px;background:#39355a">×${o[k]}</div>`);
+      el.onclick=()=>togglePick(y.id,gold,el);
+      grid.appendChild(el);
+    });
+  });
+  const wbox=document.getElementById("sel-waza");wbox.innerHTML="";
+  ["g","c","p"].forEach(h=>{
+    const lbl=document.createElement("div");lbl.className="note";lbl.style.marginTop="12px";lbl.innerHTML=`<b style="color:var(--washi);display:inline-flex;align-items:center;gap:4px">${handSVG(h,18)} ${HANDNAME[h]}の技</b>`;wbox.appendChild(lbl);
+    WAZA.filter(w=>w.hand===h).forEach(w=>{
+      const owned=(save.waza[w.id]||0)>0;
+      const d=document.createElement("div");
+      d.className="waza"+(selWaza[h]===w.id?" sel":"")+(owned?"":" locked");
+      d.innerHTML=`<span class="h">${handSVG(h,24)}</span><div><div class="wn">${w.name}${w.sp?` <span class="sptag">特${w.rar}</span>`:""}${owned?"":" 🔒未入手"}</div><div class="we">${wazaDescText(w)}</div></div>`;
+      if(owned)d.onclick=()=>{play("tap");selWaza[h]=w.id;
+        document.querySelectorAll("#sel-waza .waza").forEach(x=>x.classList.remove("sel"));d.classList.add("sel")};
+      wbox.appendChild(d);
+    });
+  });
+  updateFightBtn();
+  go("scr-select");
+}
+function togglePick(id,gold,el){
+  play("tap");
+  const idx=selTeam.findIndex(t=>t.id===id&&t.gold===gold);
+  if(idx>=0){selTeam.splice(idx,1)}
+  else{
+    if(selTeam.length>=TEAM_SIZE){document.getElementById("team-bonus").textContent="3体まで!スロットのカードをタップで外せる";return}
+    if(teamUsed(id,gold)>=ownedCount(id,gold)){document.getElementById("team-bonus").textContent="その枚数ぶんしか編成できないよ";return}
+    selTeam.push({id,gold});
+  }
+  openSelect(); // 再描画(pickedハイライト更新)
+}
+function renderTeamSlots(){
+  const box=document.getElementById("team-slots");box.innerHTML="";
+  for(let i=0;i<TEAM_SIZE;i++){
+    const t=selTeam[i];
+    const slot=document.createElement("div");
+    slot.className="team-slot"+(t?" filled":"");
+    if(t){
+      const y=yokaiById(t.id);
+      slot.innerHTML=cardHTML(y,t.gold,true);
+      slot.onclick=()=>{play("tap");selTeam.splice(i,1);openSelect()};
+    }else{
+      slot.innerHTML=`<div><div class="slotno">${i+1}体目</div><div style="font-size:20px">＋</div></div>`;
+    }
+    box.appendChild(slot);
+  }
+  // 地縁ボーナス表示
+  const bonus=selTeam.length? teamRegionBonus(selTeam.map(t=>({y:yokaiById(t.id)}))):null;
+  const bx=document.getElementById("team-bonus");
+  if(selTeam.length){
+    const regs=selTeam.map(t=>regionOf(t.id)).join("・");
+    bx.innerHTML=bonus?`✨ ${bonus.label}発動!全員 攻撃・防御+${Math.round(bonus.atk*100)}% <span style="color:#9a94b8;font-weight:400">(${regs})</span>`
+      :`<span style="color:#9a94b8;font-weight:400">地方: ${regs} … 同じ地方を2体そろえると強化!</span>`;
+  }else bx.textContent="";
+}
+function updateFightBtn(){
+  const btn=document.getElementById("btn-fight");
+  const ready=selTeam.length===TEAM_SIZE;
+  btn.disabled=!ready;
+  btn.innerHTML=`<span class="em">🔥</span>バトル開始!(${selTeam.length}/${TEAM_SIZE})`;
+}
+function cancelSelect(){if(battleMode==="online")leaveOnline();else go("scr-level")}
+
+/* ================= バトル共通 ================= */
+let B=null; // battle state
+function buildFighter(charId,gold,waza,bonus){
+  const y=yokaiById(charId);const s=baseStats(y,gold);
+  let atk=s.atk,def=s.def;
+  if(bonus){atk=Math.round(atk*(1+bonus.atk));def=Math.round(def*(1+bonus.def))}
+  let hp=s.hp;["g","c","p"].forEach(h=>{const e=wazaById(waza[h]).eff;if(e.hp)hp+=e.hp});
+  const spEff={};["g","c","p"].forEach(h=>{const w=wazaById(waza[h]);if(w&&w.sp){spEff[w.sp]=w.spN!=null?w.spN:true}});
+  return {y,gold,waza,maxhp:hp,hp,atk,def,fav:favHand(y),sp:0,spEff,
+    guardUsed:false, foreseeLeft:spEff.foresee?spEff.foresee:0};
+}
+function buildTeam(picks,waza){
+  const bonus=teamRegionBonus(picks.map(p=>({y:yokaiById(p.id)})));
+  return {list:picks.map(p=>buildFighter(p.id,p.gold,waza,bonus)),idx:0,bonus};
+}
+function confirmSelect(){
+  if(selTeam.length!==TEAM_SIZE)return;
+  play("tap");
+  const myTeam=buildTeam(selTeam,{...selWaza});
+  if(battleMode==="cpu"){
+    const enTeam=cpuTeam(cpuLevel);
+    startBattle(myTeam,enTeam); // カードはバトル終了後にまとめて配布(周回悪用の防止)
+  }else{
+    onlineSendPick(selTeam,{...selWaza});
+  }
+}
+function cpuTeam(lv){
+  const rarByLv={1:["N"],2:["N"],3:["N","R"],4:["R"],5:["R"],6:["R","SR"],7:["SR"],8:["SR"],9:["SR","MR"],10:["MR"]}[lv];
+  const tier=lv<=2?0:lv<=4?1:lv<=7?2:3;
+  const waza={g:"g"+tier,c:"c"+tier,p:"p"+tier};
+  // 地縁ボーナスをCPUも狙う(高レベルは同地方でそろえてくる)
+  let picks=[];
+  if(lv>=5&&Math.random()<0.5){
+    const regions=[...new Set(YOKAI.filter(y=>rarByLv.includes(y.rar)).map(y=>regionOf(y.id)))];
+    const reg=pickA(regions);
+    const pool=YOKAI.filter(y=>rarByLv.includes(y.rar)&&regionOf(y.id)===reg);
+    while(picks.length<TEAM_SIZE){
+      const y=pool.length?pickA(pool):pickA(YOKAI.filter(z=>rarByLv.includes(z.rar)));
+      picks.push({id:y.id,gold:(y.rar==="N"||y.rar==="R")&&Math.random()<lv*0.02});
+    }
+  }else{
+    while(picks.length<TEAM_SIZE){
+      const rar=pickA(rarByLv);const pool=YOKAI.filter(y=>y.rar===rar);const y=pickA(pool);
+      picks.push({id:y.id,gold:(rar==="N"||rar==="R")&&Math.random()<lv*0.02});
+    }
+  }
+  return buildTeam(picks,waza);
+}
+function startBattle(myTeam,enTeam){
+  B={myTeam,enTeam,me:myTeam.list[0],enemy:enTeam.list[0],
+     round:1,over:false,myHand:null,opHand:null,lock:false,charge:0,myLast:null,cpuLast:null,oppHands:[],myHands:[],cpuPlan:null,spUsed:false};
+  document.getElementById("blog").innerHTML="";
+  document.getElementById("clash").textContent="";
+  logB(`⚔️ 3対3のチーム戦、開始!`);
+  if(myTeam.bonus)logB(`<span class="good">味方の${myTeam.bonus.label}!全員 攻・防+${Math.round(myTeam.bonus.atk*100)}%</span>`);
+  if(enTeam.bonus)logB(`<span class="imp">敵の${enTeam.bonus.label}!敵全員 攻・防+${Math.round(enTeam.bonus.atk*100)}%</span>`);
+  logB(`あいこのたび妖気チャージ、勝ちが続けば妖力ゲージが満タンで<b class="gold">必殺技</b>!`);
+  refreshActive();
+  document.getElementById("bstatus").textContent="";
+  hideTell();
+  if(battleMode==="cpu")planCpu();
+  go("scr-battle");
+}
+function refreshActive(){
+  B.me=B.myTeam.list[B.myTeam.idx];B.enemy=B.enTeam.list[B.enTeam.idx];
+  const me=B.me,enemy=B.enemy;
+  document.getElementById("me-card").outerHTML=cardHTML(me.y,me.gold,true).replace('class="card mini','id="me-card" class="card mini');
+  document.getElementById("enemy-card").outerHTML=cardHTML(enemy.y,enemy.gold,true).replace('class="card mini','id="enemy-card" class="card mini');
+  document.getElementById("me-name").innerHTML=nameHTML(me.y)+(me.gold?" ★":"")+` <span style="font-size:11px;color:#9a94b8">${regionOf(me.y.id)}</span>`;
+  document.getElementById("enemy-name").innerHTML=(battleMode==="cpu"?`CPU Lv${cpuLevel}: `:"敵: ")+nameHTML(enemy.y)+(enemy.gold?" ★":"");
+  document.getElementById("enemy-hist").textContent="";
+  B.oppHands=[];
+  document.getElementById("me-hist").innerHTML=B.myHands&&B.myHands.length?"あなたの手: "+B.myHands.slice(-4).map(x=>handSVG(x,18)).join(" "):"";
+  ["g","c","p"].forEach(h=>{
+    const w=wazaById(me.waza[h]);
+    document.getElementById("hw-"+h).textContent=(w.eff.atk||w.eff.def||w.sp)?w.name:"";
+    document.getElementById("he-"+h).innerHTML=handSVG(h,50);
+    const btn=document.getElementById("hb-"+h);
+    btn.classList.toggle("favme",me.fav===h);
+    btn.querySelector(".hn").innerHTML=HANDNAME[h]+(me.fav===h?' <span class="favtag">得意!</span>':"");
+  });
+  renderDots();updateHP();updateSP();setHandsEnabled(true);
+  updateForesee();
+}
+function updateForesee(){
+  const el=document.getElementById("foresee-hint");if(!el)return;
+  if(B&&!B.over&&B.me&&B.me.foreseeLeft>0&&battleMode==="cpu"&&B.cpuPlan){
+    el.style.display="block";
+    el.innerHTML=`<span class="iph2">🔮</span> <b>見切りの目</b>:相手は ${handSVG(B.cpuPlan,22)} を出しそう…(あと${B.me.foreseeLeft}回)`;
+  }else el.style.display="none";
+}
+function renderDots(){
+  [["me-dots",B.myTeam],["enemy-dots",B.enTeam]].forEach(([id,team])=>{
+    const box=document.getElementById(id);box.innerHTML="";
+    team.list.forEach((f,i)=>{
+      const d=document.createElement("div");
+      const dead=f.hp<=0,active=i===team.idx&&!dead;
+      d.className="dot "+(dead?"dead":"alive")+(active?" active":"");
+      d.innerHTML=`<div class="art" style="width:20px">${art(f.y)}</div>`;
+      box.appendChild(d);
+    });
+  });
+}
+function updateSP(){
+  [["me",B.me],["enemy",B.enemy]].forEach(([k,f])=>{
+    const fill=document.getElementById(k+"-sp");
+    const pct=Math.min(100,f.sp/SPGAUGE*100);
+    fill.style.width=pct+"%";fill.classList.toggle("full",f.sp>=SPGAUGE);
+  });
+  const btn=document.getElementById("btn-sp");
+  if(B.me.sp>=SPGAUGE&&!B.over&&!B.lock){btn.style.display="block";document.getElementById("hb-"+B.me.fav).classList.add("favme")}
+  else btn.style.display="none";
+}
+/* ---- CPUのセリフ(読み合いギミック) ---- */
+const TELLS={
+ hand:{
+  g:["怪力がみなぎってきたぞ…!","この拳、岩をも砕く…!","ぐぬぬ…力が抑えられん!","握りしめた拳が疼く…","打ち砕いてくれる!","筋肉が喜んでおるわ!","この一撃、受けてみよ!","腕が鳴るわい…!","ゴツンといくぞ!","鉄の拳をお見舞いだ!"],
+  c:["切り裂いてやろう…","爪を研いできたぞ…","スパッといくぞ…!","二本の指が疼く…","刃のごとく鋭くいく!","チョキンと切り落とす!","この切れ味、味わえ!","素早く仕留めてやる…","ハサミのごとく挟むぞ!","風を切って参る!"],
+  p:["すべてを包みこんでやろう…","大きな一手でいくぞ…","手のひらで受けとめる…","広げた掌が語りかける…","ふわりと覆いつくす!","パーッと開いてやる!","大きく構えるぞ…","全てを受け流す…","広い心で参ろう!","包容の一手だ!"]
+ },
+ fav:["わが奥義、見せてやろう…!","一族秘伝の型でいく…!","これぞ必勝の構え!","得意の型、とくと見よ!","十八番でいかせてもらう!","この手こそ我が真骨頂…!"],
+ counter:["その動き、見切ったぞ!","さっきの手…読ませてもらった!","貴様の手はお見通しだ!","次に出す手が視える…","その癖、いただいた!","うぬの思考、丸裸よ!","前の一手が命取りだったな!"],
+ norepeat:["同じ手は二度と使わん!","さっきとは違う手でいく…","もう手の内は変えたぞ!","二度目は通用せんぞ!","趣向を変えてやろう…"],
+ taunt:["フハハ、かかってこい!","まだまだ本気ではないぞ?","その程度か…?","震えて待つがよい!","楽しませてくれるな!","勝負はこれからよ!","覚悟はよいか…!","逃がしはせんぞ!"],
+ lowhp:["おのれ、まだ倒れんぞ…!","この程度で終わると思うな!","逆転してくれるわ…!","窮鼠猫を噛む、とな!","土壇場こそ我が本領!"],
+ silent:["…………。","………。","……ふっ。","(無言で身構えている)","(じっとこちらを見ている)","(不敵に笑った)"],
+};
+const pickA=a=>a[Math.floor(Math.random()*a.length)];
+const counterOf=h=>h==="g"?"p":h==="c"?"g":"c"; // hに勝つ手
+function showTell(line,silent){
+  const s=document.getElementById("enemy-say");
+  const txt=silent?line:"「"+line+"」";
+  s.textContent=txt;s.style.display="block";
+  play("tell");
+  logB(`👹 <span class="imp">${txt}</span>`);
+}
+function hideTell(){document.getElementById("enemy-say").style.display="none"}
+function planCpu(){
+  if(!B||B.over)return;
+  const lv=cpuLevel;
+  B.cpuPlan=null;hideTell();
+  // たまに無言のターン(頻度は低め)
+  if(Math.random()<0.12){
+    showTell(pickA(TELLS.silent),true);
+    return; // 手はcpuChooseに任せる(cpuPlan=nullのまま)
+  }
+  // セリフの種類を決める。counter/norepeatは「直前の手」が必要なので1手目は除外
+  const hasMyLast=!!B.myLast;   // 自分(プレイヤー)の直前の手
+  const hasCpuLast=!!B.cpuLast; // CPU自身の直前の手
+  const lowHp=B.enemy.hp<=B.enemy.maxhp*0.3;
+  // 情報を与えるセリフ(手が読める) vs 与えないセリフ(taunt等)
+  const informTypes=["hand","hand","hand"];
+  if(lv>=3)informTypes.push("fav");
+  if(lv>=4&&hasMyLast)informTypes.push("counter");
+  if(lv>=6&&hasCpuLast)informTypes.push("norepeat");
+  const bluffTypes=["taunt"];
+  if(lowHp)bluffTypes.push("lowhp","lowhp");
+  // 低レベルほど素直に手を明かす(=読みやすく勝ちやすい)。高レベルほど煽り・ブラフで手を隠す
+  const informChance=Math.max(.35,.95-lv*.055);
+  const useInform=Math.random()<informChance;
+  const ty=useInform?pickA(informTypes):pickA(bluffTypes);
+  let hand=null,line;
+  if(ty==="hand"){
+    hand=Math.random()<.35?B.enemy.fav:pickA(["g","c","p"]);
+    let shown=hand;
+    if(lv>=8&&Math.random()<(lv-7)*.15){ // 高レベルはたまにウソをつく
+      shown=pickA(["g","c","p"].filter(x=>x!==hand));
+    }
+    line=pickA(TELLS.hand[shown]);
+  }else if(ty==="fav"){hand=B.enemy.fav;line=pickA(TELLS.fav)}
+  else if(ty==="counter"){hand=counterOf(B.myLast);line=pickA(TELLS.counter)}
+  else if(ty==="norepeat"){hand=pickA(["g","c","p"].filter(x=>x!==B.cpuLast));line=pickA(TELLS.norepeat)}
+  else{ // taunt / lowhp は手を明かさない煽りセリフ(cpuPlanはnullのまま=読めない)
+    line=pickA(ty==="lowhp"?TELLS.lowhp:TELLS.taunt);
+    B.cpuPlan=null;showTell(line);return;
+  }
+  B.cpuPlan=hand;
+  showTell(line);
+}
+function updateHP(){
+  [["me",B.me],["enemy",B.enemy]].forEach(([k,f])=>{
+    const pct=Math.max(0,f.hp/f.maxhp*100);
+    const bar=document.getElementById(k+"-hp");bar.style.width=pct+"%";
+    bar.classList.toggle("low",pct<=30);
+    document.getElementById(k+"-hptxt").textContent=`HP ${Math.max(0,f.hp)} / ${f.maxhp}`;
+  });
+}
+function logB(html){const l=document.getElementById("blog");l.innerHTML+=`<div>${html}</div>`;l.scrollTop=l.scrollHeight}
+function setHandsEnabled(on){["g","c","p"].forEach(h=>document.getElementById("hb-"+h).disabled=!on)}
+function beats(a,b){return (a==="g"&&b==="c")||(a==="c"&&b==="p")||(a==="p"&&b==="g")}
+
+function playHand(h){
+  if(!B||B.over||B.lock)return;
+  play("tap");
+  const special=!!B.pendingSpecial;
+  save.handHist.push(h);if(save.handHist.length>30)save.handHist.shift();persist();
+  document.getElementById("btn-sp").style.display="none";
+  if(battleMode==="cpu"){
+    B.lock=true;setHandsEnabled(false);
+    const oh=B.cpuPlan!==null?B.cpuPlan:cpuChoose();
+    setTimeout(()=>resolveRound(h,oh,special),350);
+  }else{
+    B.myHand=h;B.myHandSpecial=special;B.lock=true;setHandsEnabled(false);
+    document.getElementById("bstatus").textContent="相手の手を待っています…";
+    netSend({t:"hand",r:B.round,h,sp:special});
+    tryResolveOnline();
+  }
+}
+function cpuChoose(){
+  const lv=cpuLevel;
+  // 高レベルほどプレイヤーの手グセを読んで対策してくる
+  if(save.handHist.length>=3 && Math.random()<lv*0.055){
+    const cnt={g:0,c:0,p:0};save.handHist.slice(-8).forEach(x=>cnt[x]++);
+    const likely=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0];
+    return likely==="g"?"p":likely==="c"?"g":"c"; // 読み勝ち
+  }
+  if(Math.random()<0.3)return B.enemy.fav; // 得意手を出したがる
+  return ["g","c","p"][Math.floor(Math.random()*3)];
+}
+function showClash(mh,oh,outcome){
+  // outcome: "win" | "lose" | "aiko"
+  const label=outcome==="win"?"あなたの かち!":outcome==="lose"?"あいての かち":"あ い こ";
+  const cls=outcome==="win"?"cwin":outcome==="lose"?"close":"caiko";
+  const enMark=outcome==="lose"?`<span class="cmk crown">${crownSVG(26)}</span>`:outcome==="win"?'<span class="cmk cross">✕</span>':"";
+  const meMark=outcome==="win"?`<span class="cmk crown">${crownSVG(26)}</span>`:outcome==="lose"?'<span class="cmk cross">✕</span>':"";
+  document.getElementById("clash").innerHTML=
+    `<div class="clashbanner ${cls}">${label}</div>`+
+    `<div class="clashline">`+
+      `<span class="chandwrap"><span class="chlbl">あいて</span><span class="chand ${outcome==="lose"?"wonH":outcome==="win"?"lostH":""}">${handSVG(oh,54)}${enMark}</span></span>`+
+      `<span class="cvs">VS</span>`+
+      `<span class="chandwrap"><span class="chlbl">あなた</span><span class="chand ${outcome==="win"?"wonH":outcome==="lose"?"lostH":""}">${handSVG(mh,54)}${meMark}</span></span>`+
+    `</div>`;
+}
+function resolveRound(mh,oh,special){
+  hideTell();
+  B.myLast=mh;B.cpuLast=oh;
+  B.oppHands.push(oh);
+  if(!B.myHands)B.myHands=[];
+  B.myHands.push(mh);
+  document.getElementById("enemy-hist").innerHTML=B.oppHands.length?"この妖怪の手: "+B.oppHands.slice(-4).map(x=>handSVG(x,18)).join(" "):"";
+  document.getElementById("me-hist").innerHTML=B.myHands.length?"あなたの手: "+B.myHands.slice(-4).map(x=>handSVG(x,18)).join(" "):"";
+  // 見切りの目: 使うたびに残り回数を消費
+  if(B.me.foreseeLeft>0)B.me.foreseeLeft--;
+  if(mh===oh){
+    showClash(mh,oh,"aiko");
+    const meGuard=B.me.spEff&&B.me.spEff.aikoGuard;
+    const enGuard=B.enemy.spEff&&B.enemy.spEff.aikoGuard;
+    const dMe=meGuard?0:Math.max(4,Math.round(B.enemy.atk*0.12));
+    const dEn=enGuard?0:Math.max(4,Math.round(B.me.atk*0.12));
+    B.me.hp-=dMe;B.enemy.hp-=dEn;
+    B.charge=Math.min(3,B.charge+1);
+    B.me.sp=Math.min(SPGAUGE,B.me.sp+12);B.enemy.sp=Math.min(SPGAUGE,B.enemy.sp+12);
+    play("aiko");setTimeout(()=>play("charge"),160);
+    logB(`R${B.round}: あいこ! ${meGuard?'<span class="good">あいこ結界でノーダメージ!</span>':`妖気衝突 自分<b>-${dMe}</b>`}/相手<b>-${dEn}</b>。<span class="good">妖気チャージ×${B.charge}(次+${B.charge*20}%)</span>`);
+    document.getElementById("bstatus").textContent=`🔮 妖気チャージ×${B.charge}`;
+    updateHP();updateSP();
+    if(B.me.hp<=0||B.enemy.hp<=0){handleKO(B.me.hp<=0,B.enemy.hp<=0);return}
+    endRound();return;
+  }
+  const iWin=beats(mh,oh);
+  showClash(mh,oh,iWin?"win":"lose");
+  const atkF=iWin?B.me:B.enemy, defF=iWin?B.enemy:B.me;
+  const atkH=iWin?mh:oh, defH=iWin?oh:mh;
+  const aw=wazaById(atkF.waza[atkH]).eff, dw=wazaById(defF.waza[defH]).eff;
+  const fav=atkF.fav===atkH;
+  const useSp=special&&iWin;
+  let dmg=(atkF.atk+(aw.atk||0))*(fav?1.5:1)-(defF.def+(dw.def||0))*0.5;
+  dmg*=1+B.charge*0.2;
+  if(useSp)dmg*=2.5;
+  // 背水の覚悟: HP3割以下でダメージ2倍
+  if(atkF.spEff&&atkF.spEff.lastwill&&atkF.hp<=atkF.maxhp*0.3)dmg*=atkF.spEff.lastwill;
+  dmg=Math.max(8,Math.round(dmg));
+  // 不屈の構え: 致死ダメージを一度だけHP1でこらえる
+  let guarded=false;
+  if(dmg>=defF.hp && defF.spEff&&defF.spEff.guard && !defF.guardUsed){
+    dmg=defF.hp-1; defF.guardUsed=true; guarded=true;
+  }
+  defF.hp-=dmg;
+  // 妖気吸引: 勝った側がダメージの一部を回復
+  let healed=0;
+  if(!special&&atkF.spEff&&atkF.spEff.lifesteal){
+    healed=Math.round(dmg*atkF.spEff.lifesteal);
+    atkF.hp=Math.min(atkF.maxhp,atkF.hp+healed);
+  }
+  // 呪いの反撃: 攻撃を受けた側が反射(spEffはdefF)
+  let reflected=0;
+  if(defF.spEff&&defF.spEff.thorns&&defF.hp>0){
+    reflected=Math.max(1,Math.round(dmg*defF.spEff.thorns));
+    atkF.hp=Math.max(0,atkF.hp-reflected);
+  }
+  // 妖力ゲージ加算(妖力奔流でボーナス)
+  if(!special){
+    let gain=fav?34:24;
+    if(atkF.spEff&&atkF.spEff.spgain)gain+=atkF.spEff.spgain;
+    atkF.sp=Math.min(SPGAUGE,atkF.sp+gain);
+  }
+  if(useSp){
+    play("spHit");
+    bigSpOverlay(atkF,"大打撃!!");
+    setTimeout(()=>{shakeScreen(true);hitFlash(defF===B.enemy?"enemy-card":"me-card");popDamage(dmg,true)},260);
+  }else{
+    play(fav?"big":"hit");
+    if(fav){shakeScreen(false);hitFlash(defF===B.enemy?"enemy-card":"me-card");popDamage(dmg,false)}
+  }
+  const wname=wazaById(atkF.waza[atkH]).name;
+  logB(`R${B.round}: ${iWin?'<span class="good">じゃんけん勝ち!</span>':'<span class="imp">負け…</span>'} ${atkF.y.name}の「${wname}」`+
+    `${useSp?'<span class="gold">✦必殺・妖力解放!!✦</span>':""}${fav&&!useSp?'<span class="gold">得意手炸裂!!</span>':""}`+
+    `${B.charge?`<span class="good">+チャージ×${B.charge}</span>`:""} → <b>${dmg}</b>ダメージ!`+
+    `${guarded?'<span class="gold"> 不屈!HP1でこらえた!</span>':""}`+
+    `${healed?`<span class="good"> 妖気吸引 +${healed}回復</span>`:""}`+
+    `${reflected?`<span class="imp"> 呪い反撃 相手-${reflected}</span>`:""}`);
+  B.charge=0;
+  document.getElementById("bstatus").textContent="";
+  updateHP();updateSP();
+  const extraDelay=useSp?1500:(fav?300:0);
+  if(B.me.hp<=0||B.enemy.hp<=0){setTimeout(()=>handleKO(B.me.hp<=0,B.enemy.hp<=0),extraDelay);return}
+  if(extraDelay){B.lock=true;setHandsEnabled(false);setTimeout(()=>{B.lock=false;endRound()},extraDelay)}
+  else endRound();
+}
+/* KO処理:倒れた側は次の妖怪へ交代。全滅で決着 */
+function handleKO(meDown,enDown){
+  B.lock=true;setHandsEnabled(false);
+  const myAlive=()=>B.myTeam.list.some(f=>f.hp>0);
+  const enAlive=()=>B.enTeam.list.some(f=>f.hp>0);
+  if(meDown)logB(`💥 ${B.me.y.name}が倒れた!`);
+  if(enDown)logB(`💥 敵の${B.enemy.y.name}を倒した!`);
+  play("hit");
+  // 因果応報(道連れ): 倒れた妖怪が相手に大ダメージ
+  if(meDown&&B.me.spEff&&B.me.spEff.revenge&&B.enemy.hp>0){
+    const rv=Math.round(B.me.maxhp*0.5*B.me.spEff.revenge);
+    B.enemy.hp=Math.max(0,B.enemy.hp-rv);
+    logB(`<span class="gold">✦因果応報!${B.me.y.name}が道連れに 相手へ-${rv}!✦</span>`);
+    hitFlash("enemy-card");popDamage(rv,true);
+    if(B.enemy.hp<=0)enDown=true;
+  }
+  if(enDown&&B.enemy.spEff&&B.enemy.spEff.revenge&&B.me.hp>0){
+    const rv=Math.round(B.enemy.maxhp*0.5*B.enemy.spEff.revenge);
+    B.me.hp=Math.max(0,B.me.hp-rv);
+    logB(`<span class="imp">✦敵の因果応報!道連れで こちら-${rv}!✦</span>`);
+    hitFlash("me-card");popDamage(rv,true);
+    if(B.me.hp<=0)meDown=true;
+  }
+  updateHP();
+  // 両者全滅なら相打ち判定
+  if(!myAlive()&&!enAlive()){setTimeout(()=>finishDrawGame(),700);return}
+  if(!enAlive()){setTimeout(()=>finishMatch(true),700);return}
+  if(!myAlive()){setTimeout(()=>finishMatch(false),700);return}
+  // 交代
+  setTimeout(()=>{
+    if(meDown){B.myTeam.idx=B.myTeam.list.findIndex(f=>f.hp>0);logB(`➡️ ${B.myTeam.list[B.myTeam.idx].y.name}、いくぞ!`)}
+    if(enDown){B.enTeam.idx=B.enTeam.list.findIndex(f=>f.hp>0);logB(`➡️ 敵は${B.enTeam.list[B.enTeam.idx].y.name}を繰り出した!`)}
+    B.charge=0;B.myHand=null;B.opHand=null;B.lock=false;
+    refreshActive();
+    if(battleMode==="cpu")planCpu();
+  },850);
+}
+function spawnParticles(){
+  const box=document.getElementById("sp-particles");if(!box)return;
+  box.innerHTML="";
+  const N=18;
+  for(let i=0;i<N;i++){
+    const a=(i/N)*Math.PI*2+Math.random()*.4;
+    const dist=120+Math.random()*180;
+    const p=document.createElement("div");p.className="sp-p";
+    p.style.setProperty("--dx",Math.cos(a)*dist+"px");
+    p.style.setProperty("--dy",Math.sin(a)*dist+"px");
+    p.style.animationDelay=(.3+Math.random()*.15)+"s";
+    if(i%2)p.style.background="radial-gradient(circle,#fff,#ff5a3c 60%,transparent)";
+    box.appendChild(p);
+  }
+}
+function playSpOverlay(fighter){ // 発動宣言(ゲージMAX→解放)
+  const ov=document.getElementById("sp-overlay");
+  document.getElementById("sp-portrait").innerHTML=art(fighter.y);
+  document.getElementById("sp-title").textContent=fighter.y.name+" 妖力解放!";
+  document.getElementById("sp-kanji").textContent="必殺";
+  spawnParticles();
+  ov.classList.remove("show");void ov.offsetWidth;
+  ov.classList.add("show");
+  play("spCharge");
+  setTimeout(()=>ov.classList.remove("show"),1700);
+}
+function bigSpOverlay(fighter,kanji){ // ヒットの瞬間の大打撃演出
+  const ov=document.getElementById("sp-overlay");
+  document.getElementById("sp-portrait").innerHTML=art(fighter.y);
+  document.getElementById("sp-title").textContent="渾身の一撃!";
+  document.getElementById("sp-kanji").textContent=kanji||"大打撃!!";
+  spawnParticles();
+  ov.classList.remove("show");void ov.offsetWidth;
+  ov.classList.add("show");
+  setTimeout(()=>ov.classList.remove("show"),1700);
+}
+function hitFlash(targetId){
+  const el=document.getElementById(targetId);if(!el)return;
+  el.classList.remove("hitflash");void el.offsetWidth;el.classList.add("hitflash");
+  setTimeout(()=>el.classList.remove("hitflash"),520);
+}
+function shakeScreen(strong){const a=document.getElementById("app");if(!a)return;
+  const cls=strong?"shaking":"shaking-lite";
+  a.classList.remove("shaking","shaking-lite");void a.offsetWidth;a.classList.add(cls);
+  setTimeout(()=>a.classList.remove(cls),strong?720:420)}
+function popDamage(n,crit){
+  const d=document.getElementById("dmg-pop");if(!d)return;
+  d.textContent="-"+n;d.className=crit?"crit":"";void d.offsetWidth;d.classList.add("show");
+  setTimeout(()=>d.classList.remove("show"),crit?1200:1000);
+}
+function useSpecial(){
+  if(!B||B.over||B.lock||B.me.sp<SPGAUGE)return;
+  B.me.sp=0;B.spUsed=true;
+  document.getElementById("btn-sp").style.display="none";
+  playSpOverlay(B.me);
+  logB(`👺 <span class="gold">妖力解放!このターン、じゃんけんに勝てば超特大ダメージ!</span>`);
+  B.pendingSpecial=true;
+  document.getElementById("bstatus").innerHTML='<span class="gold" style="font-size:15px">✦ 妖力解放中!手を選べ! ✦</span>';
+}
+function endRound(){
+  B.round++;B.myHand=null;B.opHand=null;B.lock=false;B.pendingSpecial=false;
+  if(battleMode==="online")document.getElementById("bstatus").textContent="";
+  if(battleMode==="cpu")planCpu();
+  setHandsEnabled(true);updateSP();
+}
+function wazaWinReward(){
+  // 特殊技ドロップ抽選(レベルが高いほど、またレアな特殊技ほど出にくい)
+  const lv=battleMode==="cpu"?cpuLevel:5;
+  const spChance=0.14+lv*0.02; // Lv1:16% 〜 Lv10:34%
+  if(Math.random()<spChance){
+    // レア度を難易度で重み付け(低レベルはR中心、高レベルでSR/MRも)
+    let pool;
+    const r=Math.random();
+    if(lv<=3)      pool=SPWAZA.filter(w=>w.rar==="R");
+    else if(lv<=6) pool=SPWAZA.filter(w=>w.rar==="R"||(w.rar==="SR"&&r<0.5));
+    else if(lv<=8) pool=SPWAZA.filter(w=>w.rar==="R"||w.rar==="SR"||(w.rar==="MR"&&r<0.25));
+    else           pool=SPWAZA.filter(w=>w.rar==="SR"||w.rar==="MR"||(w.rar==="R"&&r<0.3));
+    if(!pool.length)pool=SPWAZA.filter(w=>w.rar==="R");
+    const w=pickA(pool);
+    save.waza[w.id]=(save.waza[w.id]||0)+1;persist();
+    return {type:"waza",waza:w,isNew:save.waza[w.id]===1};
+  }
+  let tier;
+  if(battleMode==="cpu"){
+    const r=Math.random();
+    tier = lv<=3?1 : lv<=6?(r<0.7?2:1) : lv<=8?(r<0.35?3:2) : (r<0.7?3:2);
+  }else tier=1+Math.floor(Math.random()*3);
+  const hand=pickA(["g","c","p"]);
+  const w=wazaById(hand+tier);
+  save.waza[w.id]=(save.waza[w.id]||0)+1;persist();
+  return {type:"waza",waza:w,isNew:save.waza[w.id]===1};
+}
+function giveRewards(rewards,then){
+  // rewards: [{type,...}] を順番にモーダル表示
+  let i=0;
+  const next=()=>{
+    if(i>=rewards.length){then&&then();return}
+    const r=rewards[i++];
+    showGetModal(r,next);
+  };
+  next();
+}
+function finishMatch(iWin){
+  B.over=true;setHandsEnabled(false);hideTell();
+  document.getElementById("btn-sp").style.display="none";
+  if(iWin)save.wins++;else save.losses++;persist();
+  if(battleMode==="online")netSend({t:"end"});
+  play(iWin?"win":"lose");
+  setTimeout(()=>{
+    const rewards=[gachaOne()]; // 戦い抜いた人は必ず妖怪カード1枚
+    if(iWin){
+      const rw=wazaWinReward(); // 勝つと技カードも追加
+      rewards.push(rw);
+      logB(`🏆 勝利!妖怪カードと技カード「${rw.waza.name}」を手に入れた!`);
+    }else{
+      logB(`💧 惜敗…でも妖怪カードを1枚もらえた!`);
+    }
+    giveRewards(rewards,()=>showResult(iWin));
+  },800);
+}
+function finishDrawGame(){
+  B.over=true;setHandsEnabled(false);hideTell();persist();
+  document.getElementById("btn-sp").style.display="none";
+  if(battleMode==="online")netSend({t:"end"});
+  play("drawG");
+  setTimeout(()=>{
+    logB(`💥 相打ち!妖怪カードを1枚もらえた!`);
+    giveRewards([gachaOne()],()=>{
+      document.getElementById("result-title").textContent="相打ち!";
+      document.getElementById("result-title").style.color="#9a94b8";
+      document.getElementById("result-sub").textContent="両者同時に力尽きた…勝敗なし。";
+      document.getElementById("result-detail").innerHTML='<div style="font-size:60px">💥</div>';
+      document.getElementById("btn-rematch").style.display=battleMode==="cpu"?"block":"none";
+      go("scr-result");renderHome();
+    });
+  },700);
+}
+function fleeBattle(){
+  if(!B||B.over)return;
+  if(!confirm("降参してにげますか?(にげるとカードはもらえません)"))return;
+  hideTell();play("lose");
+  save.losses++;persist();
+  if(battleMode==="online"){netSend({t:"flee"});}
+  showResult(false,true); // 降参は報酬なし
+  if(battleMode==="online")teardownNet();
+}
+function showResult(iWin,fled){
+  document.getElementById("result-title").textContent=iWin?"勝利!":fled?"降参…":"敗北…";
+  document.getElementById("result-title").style.color=iWin?"":"#9a94b8";
+  document.getElementById("result-sub").textContent=fled?"にげたのでカードはもらえなかった…":(iWin?"みごと妖怪バトルを制した!":"つぎは勝てる、きっと。");
+  document.getElementById("result-detail").innerHTML=iWin?`<div>${iconSVG("trophy",72)}</div>`:'<div style="font-size:60px">💨</div>';
+  document.getElementById("btn-rematch").style.display=battleMode==="cpu"?"block":"none";
+  go("scr-result");renderHome();
+}
+function rematch(){play("select");openSelect()}
+
+/* ================= コレクション ================= */
+/* ================= 合成(化ける) ================= */
+const FUSE_COST=3; // 同カード3枚で1つ上へ
+function renderFuse(){
+  const box=document.getElementById("col-fuse-list");box.innerHTML="";
+  box.innerHTML=`<p class="note">同じカードを${FUSE_COST}枚あつめると「化ける」!ダブりが無駄にならないぞ。</p>
+    <h3 class="mincho" style="margin:14px 0 4px;font-size:16px">妖怪を GOLD化(ノーマル・レアのみ)</h3>`;
+  let anyY=false;
+  [...YOKAI].filter(y=>y.rar==="N"||y.rar==="R").forEach(y=>{
+    const o=save.cards[y.id];if(!o||o.n<FUSE_COST)return;anyY=true;
+    const row=document.createElement("div");row.className="fuse-row";
+    row.innerHTML=`<div class="art" style="width:40px">${art(y)}</div>
+      <div class="fuse-info"><b>${nameHTML(y)}</b> <small style="color:#9a94b8">ノーマル×${o.n}</small><br>
+      <span style="color:var(--gold1);font-size:12px">${FUSE_COST}枚 → ★GOLD版×1</span></div>`;
+    const btn=document.createElement("button");btn.className="fuse-btn";btn.textContent="化ける!";
+    btn.onclick=()=>fuseYokai(y.id);
+    row.appendChild(btn);box.appendChild(row);
+  });
+  if(!anyY)box.insertAdjacentHTML("beforeend",`<p class="note" style="color:#6a6490">GOLD化できる妖怪がまだいない(ノーマル/レアのダブりが${FUSE_COST}枚必要)</p>`);
+  box.insertAdjacentHTML("beforeend",`<h3 class="mincho" style="margin:16px 0 4px;font-size:16px">技を1つ上のランクへ</h3>`);
+  let anyW=false;
+  ["g","c","p"].forEach(h=>{
+    for(let t=1;t<=2;t++){
+      const w=wazaById(h+t),up=wazaById(h+(t+1));const n=save.waza[w.id]||0;
+      if(n<FUSE_COST)continue;anyW=true;
+      const row=document.createElement("div");row.className="fuse-row";
+      row.innerHTML=`<span>${handSVG(h,22)}</span>
+        <div class="fuse-info"><b>${w.name}</b> <small style="color:#9a94b8">×${n}</small><br>
+        <span style="color:var(--onibi);font-size:12px">${FUSE_COST}枚 → ${up.name}(${effText(up.eff)})</span></div>`;
+      const btn=document.createElement("button");btn.className="fuse-btn";btn.textContent="化ける!";
+      btn.onclick=()=>fuseWaza(w.id,up.id);
+      row.appendChild(btn);box.appendChild(row);
+    }
+  });
+  if(!anyW)box.insertAdjacentHTML("beforeend",`<p class="note" style="color:#6a6490">合成できる技がまだない(同じ技が${FUSE_COST}枚必要)</p>`);
+  document.getElementById("col-prog").textContent="ダブりカードを合成してパワーアップ!";
+}
+function fuseYokai(id){
+  const o=save.cards[id];if(!o||o.n<FUSE_COST)return;
+  if(!confirm(`${yokaiById(id).name} をノーマル${FUSE_COST}枚 → GOLD×1 に化けさせる?`))return;
+  o.n-=FUSE_COST;o.g=(o.g||0)+1;persist();
+  play("gachaSR");setTimeout(()=>play("gold"),350);
+  const isNew=o.g===1;
+  showGetModal({type:"yokai",yokai:yokaiById(id),gold:true,isNew},()=>{colTab("fuse")});
+}
+function fuseWaza(fromId,toId){
+  const n=save.waza[fromId]||0;if(n<FUSE_COST)return;
+  if(!confirm(`${wazaById(fromId).name}${FUSE_COST}枚 → ${wazaById(toId).name}×1 に化けさせる?`))return;
+  save.waza[fromId]-=FUSE_COST;save.waza[toId]=(save.waza[toId]||0)+1;persist();
+  const w=wazaById(toId);
+  showGetModal({type:"waza",waza:w,isNew:save.waza[toId]===1},()=>{colTab("fuse")});
+}
+function openCollection(){play("select");colTab("yokai");go("scr-collection")}
+let colSortMode="rar";
+function setColSort(m){play("tap");colSortMode=m;
+  document.getElementById("sort-rar").classList.toggle("on",m==="rar");
+  document.getElementById("sort-pref").classList.toggle("on",m==="pref");
+  colTab("yokai");
+}
+function colTab(t){
+  document.getElementById("tab-yokai").classList.toggle("on",t==="yokai");
+  document.getElementById("tab-waza").classList.toggle("on",t==="waza");
+  document.getElementById("tab-fuse").classList.toggle("on",t==="fuse");
+  document.getElementById("col-grid").style.display=t==="yokai"?"flex":"none";
+  document.getElementById("col-sort").style.display=t==="yokai"?"block":"none";
+  document.getElementById("col-waza-list").style.display=t==="waza"?"block":"none";
+  document.getElementById("col-fuse-list").style.display=t==="fuse"?"block":"none";
+  if(t==="fuse"){renderFuse();return}
+  if(t==="yokai"){
+    let owned=0,goldOwned=0;
+    const g=document.getElementById("col-grid");g.innerHTML="";
+    const rarOrder={MR:0,SR:1,R:2,N:3};
+    const prefOrder=id=>YOKAI.findIndex(y=>y.id===id); // YOKAIは都道府県順(北→南→海外)で定義済み
+    const sorted=[...YOKAI].sort((a,b)=>
+      colSortMode==="pref" ? prefOrder(a.id)-prefOrder(b.id)
+                           : (rarOrder[a.rar]-rarOrder[b.rar]) || (prefOrder(a.id)-prefOrder(b.id)));
+    sorted.forEach(y=>{
+      const o=save.cards[y.id]||{n:0,g:0};
+      const has=o.n>0||o.g>0;if(has)owned++;if(o.g>0)goldOwned++;
+      const d=document.createElement("div");
+      d.innerHTML=cardHTML(y,o.g>0,true,has?"":"locked");
+      const el=d.firstChild;
+      if(!has){el.querySelector(".nm").textContent="?????";el.querySelector(".pref").textContent=y.pref}
+      else el.insertAdjacentHTML("beforeend",`<div class="owncount">×${o.n+o.g}</div>`);
+      el.onclick=()=>showDetail(y,o);
+      g.appendChild(el);
+    });
+    document.getElementById("col-prog").textContent=`図鑑 ${owned} / ${YOKAI.length}  ・ GOLD ${goldOwned}体  ・ ${save.wins}勝${save.losses}敗  ・ カードをタップで解説!`;
+  }else{
+    const box=document.getElementById("col-waza-list");
+    box.innerHTML='<div class="cardgrid" id="waza-grid"></div>';
+    const grid=document.getElementById("waza-grid");
+    WAZA.filter(w=>!w.id.endsWith("0")).forEach(w=>{
+      const n=save.waza[w.id]||0;
+      const d=document.createElement("div");
+      d.innerHTML=wazaCardHTML(w,true,n>0?"":"locked");
+      const el=d.firstChild;
+      if(n<=0){el.querySelector(".nm").textContent="?????"}
+      else el.insertAdjacentHTML("beforeend",`<div class="owncount">×${n}</div>`);
+      grid.appendChild(el);
+    });
+    document.getElementById("col-prog").textContent="技カードは バトルに勝つと もらえる!";
+  }
+}
+
+function showDetail(y,o){
+  play("tap");
+  const has=o.n>0||o.g>0;
+  const box=document.getElementById("detail-card");
+  box.innerHTML=cardHTML(y,o.g>0,false,has?"":"locked");
+  if(!has){const nm=box.querySelector(".nm");if(nm)nm.textContent="?????"}
+  const f=favHand(y);
+  const reg=regionOf(y.id);
+  // 同じ地方の妖怪(地縁ボーナスの相棒候補)
+  const mates=YOKAI.filter(z=>z.id!==y.id&&regionOf(z.id)===reg);
+  const mateNames=mates.map(z=>z.name).join("・");
+  document.getElementById("detail-desc").innerHTML=has
+    ?`<b>${nameHTML(y)}</b><br>${DESC[y.id]||""}<br>`+
+     `<span style="color:var(--onibi);display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap">得意手: ${handSVG(f,18)} ${HANDNAME[f]} ・ 所持 ${o.n+o.g}枚${o.g?`(うちGOLD ${o.g}枚)`:""}</span>`+
+     `<div class="regionbox"><b style="color:var(--gold1)">🗾 地方: ${reg}</b><br>`+
+     `<span style="font-size:12px">この妖怪と<b>同じ地方</b>を2〜3体そろえると<b style="color:var(--gold1)">地縁ボーナス</b>で全員強化!<br>`+
+     `同郷の仲間: ${mateNames||"なし"}</span></div>`
+    :`<b>?????</b>(${y.pref})<br>まだ発見していない妖怪。バトルに勝つと手に入るかも!`;
+  document.getElementById("modal-detail").classList.add("show");
+}
+function closeDetail(){document.getElementById("modal-detail").classList.remove("show")}
+/* ================= オンライン対戦 ================= */
+let sb=null,channel=null,myNetId=Math.random().toString(36).slice(2,10),oppNetId=null,myPickSent=null,oppPick=null,netHands={};
+function startOnlineFlow(){
+  play("select");
+  battleMode="online";
+  const conf=SUPABASE_URL&&SUPABASE_KEY;
+  document.getElementById("online-setup").style.display=conf?"block":"none";
+  document.getElementById("online-noconf").style.display=conf?"none":"block";
+  document.getElementById("online-wait").style.display="none";
+  go("scr-online");
+}
+function loadSupabase(){
+  return new Promise((res,rej)=>{
+    if(window.supabase)return res();
+    const s=document.createElement("script");
+    s.src="https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.39.3/supabase.min.js";
+    s.onload=res;s.onerror=()=>rej(new Error("supabase-js読み込み失敗"));
+    document.head.appendChild(s);
+  });
+}
+async function joinRoom(){
+  const code=document.getElementById("room-code").value.trim();
+  if(!code){alert("あいことばを入力してね");return}
+  try{await loadSupabase()}catch(e){alert("通信ライブラリの読み込みに失敗しました。電波状況を確認してね。");return}
+  if(!sb)sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  teardownNet(false);
+  oppNetId=null;myPickSent=null;oppPick=null;netHands={};
+  channel=sb.channel("yk-room-"+code,{config:{broadcast:{self:false}}});
+  channel.on("broadcast",{event:"msg"},({payload})=>handleNet(payload));
+  channel.subscribe(status=>{
+    if(status==="SUBSCRIBED"){netSend({t:"hello",id:myNetId})}
+  });
+  document.getElementById("online-setup").style.display="none";
+  document.getElementById("online-wait").style.display="block";
+  document.getElementById("online-room-label").textContent="あいことば: "+code;
+}
+function netSend(obj){if(channel)channel.send({type:"broadcast",event:"msg",payload:{...obj,from:myNetId}})}
+function handleNet(p){
+  if(!p||p.from===myNetId)return;
+  if(p.t==="hello"){
+    if(!oppNetId){oppNetId=p.from;netSend({t:"hello",id:myNetId});
+      // マッチ成立 → 選択へ(カードはバトル後に配布)
+      openSelect();
+    }
+    return;
+  }
+  if(oppNetId&&p.from!==oppNetId)return; // 3人目は無視
+  if(p.t==="pick"){oppPick=p.f;tryStartOnlineBattle();return}
+  if(p.t==="hand"){netHands[p.r]={h:p.h,sp:p.sp};tryResolveOnline();return}
+  if(p.t==="flee"&&B&&!B.over){logB('<span class="good">相手が逃げ出した!</span>');finishMatch(true);return}
+  if(p.t==="leave"&&B&&!B.over){logB('<span class="good">相手が切断した!不戦勝!</span>');finishMatch(true);return}
+}
+function onlineSendPick(picks,waza){
+  myPickSent={picks,waza};
+  netSend({t:"pick",f:myPickSent});
+  document.getElementById("btn-fight").disabled=true;
+  document.getElementById("btn-fight").innerHTML='<span class="em">⏳</span>相手の準備を待っています…';
+  tryStartOnlineBattle();
+}
+function tryStartOnlineBattle(){
+  if(!myPickSent||!oppPick)return;
+  const myTeam=buildTeam(myPickSent.picks,myPickSent.waza);
+  const enTeam=buildTeam(oppPick.picks,oppPick.waza);
+  document.getElementById("btn-fight").innerHTML='<span class="em">🔥</span>バトル開始!';
+  startBattle(myTeam,enTeam);
+}
+function tryResolveOnline(){
+  if(!B||B.over)return;
+  const rec=netHands[B.round];
+  if(B.myHand&&rec){const mh=B.myHand,special=B.myHandSpecial;delete netHands[B.round];
+    setTimeout(()=>resolveRound(mh,rec.h,special),300)}
+}
+function leaveOnline(){teardownNet();go("scr-home");renderHome()}
+function teardownNet(send=true){
+  if(channel){if(send)try{netSend({t:"leave"})}catch(e){} try{channel.unsubscribe()}catch(e){} channel=null}
+}
+window.addEventListener("beforeunload",()=>teardownNet());
+
+/* ================= 起動処理(ログイン必須) ================= */
+(function boot(){
+  updateAudioUI();
+  // 説明文の手プレースホルダーにSVGを描き込む
+  document.querySelectorAll(".hph").forEach(el=>{el.innerHTML=handSVG(el.dataset.h,20)});
+  // 見出し・ボタンのアイコンプレースホルダーにSVGを描き込む
+  document.querySelectorAll(".iph").forEach(el=>{el.innerHTML=iconSVG(el.dataset.i,+el.dataset.s||24)});
+  // 自動再生ポリシー対策:最初のタップ/クリックでBGMを起動
+  const kick=()=>{if(bgmWantScene&&!bgmMuted)playBgm(bgmWantScene);
+    document.removeEventListener("pointerdown",kick);document.removeEventListener("touchstart",kick);document.removeEventListener("click",kick)};
+  document.addEventListener("pointerdown",kick);document.addEventListener("touchstart",kick);document.addEventListener("click",kick);
+  let sess=null;try{sess=localStorage.getItem(LSS)}catch(e){}
+  const accts=getAccts();
+  if(sess&&accts[sess]){
+    currentUser=sess;save=accts[sess].data;fixSave();
+    document.getElementById("home-user").textContent="👤 "+currentUser+" の妖怪手帳";
+    renderHome();go("scr-home");
+  }else{
+    go("scr-auth");
+  }
+})();
+</script>
+</body>
+</html>
