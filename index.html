@@ -167,8 +167,9 @@ h2.sect{font-size:21px;margin:16px 0 6px;letter-spacing:.04em;color:var(--washi)
 .card.rMR{border-color:var(--cMR);box-shadow:0 0 18px rgba(255,178,0,.55)} .card.rMR .rar{color:#b17500}
 .card.gold{border-image:linear-gradient(135deg,var(--gold1),var(--gold2),var(--gold1)) 1;
   background:linear-gradient(160deg,#fff6d8,#f3dfa0);box-shadow:0 0 20px rgba(247,215,116,.55)}
-.goldbadge{position:absolute;bottom:6px;right:6px;background:linear-gradient(135deg,var(--gold2),var(--gold1));
-  color:#3d2b00;font-size:9px;font-weight:900;padding:2px 6px;border-radius:6px;letter-spacing:.1em}
+.goldbadge{position:absolute;top:22px;left:6px;background:linear-gradient(135deg,var(--gold2),var(--gold1));
+  color:#3d2b00;font-size:8px;font-weight:900;padding:2px 6px;border-radius:6px;letter-spacing:.1em;z-index:2}
+.card.mini .goldbadge{top:18px;left:5px;font-size:7px;padding:1px 5px}
 .card.mini{width:96px;padding:6px 5px 5px}
 .card.mini .art{padding:0 2px}
 .card.mini .nm{font-size:10px;min-height:26px}
@@ -179,6 +180,10 @@ h2.sect{font-size:21px;margin:16px 0 6px;letter-spacing:.04em;color:var(--washi)
 .card.locked{filter:grayscale(1) brightness(.55)}
 .card.locked .art svg{filter:brightness(0);opacity:.5}
 .card.sel{outline:3px solid var(--onibi);outline-offset:2px}
+/* 編成画面のカードは下に余白を作り、編成/同郷バッジがステータスに被らないようにする */
+#sel-chars .card{padding-bottom:20px;overflow:visible}
+#sel-chars .card .owncount{bottom:4px;z-index:3}
+#sel-chars .card .regtag{bottom:4px;z-index:3}
 .cardgrid{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:12px}
 .owncount{position:absolute;bottom:-8px;left:-8px;background:var(--shu);color:#fff;border-radius:999px;
   font-size:10px;font-weight:900;padding:3px 7px;border:2px solid var(--sumi);box-shadow:0 2px 6px rgba(0,0,0,.5);z-index:2}
@@ -364,6 +369,13 @@ input.txt{width:100%;background:#1a1330;border:2px solid #56417f;border-radius:1
 .record{display:flex;gap:14px;justify-content:center;margin-top:14px;font-size:14px;color:#cfc3ea}
 .record b{color:var(--gold1);font-size:17px}
 .soundpanel{margin-top:16px;background:var(--sumi2);border:2px solid #3a2f5c;border-radius:16px;padding:12px 14px}
+.a2hs{margin:22px 0 30px;background:linear-gradient(160deg,#1a2540,#141a2e);border:2px dashed #5eead4;
+  border-radius:16px;padding:16px 14px;text-align:center}
+.a2hs-ttl{font-family:"Mochiy Pop One","Zen Maru Gothic",sans-serif;color:#5eead4;font-size:16px;margin-bottom:8px}
+.a2hs-body{font-size:13px;line-height:1.9;color:var(--washi)}
+.a2hs-body rt{font-size:8px}
+/* すでにホーム画面から起動している時は案内を隠す */
+@media (display-mode: standalone){.a2hs{display:none}}
 .soundrow{display:flex;align-items:center;gap:10px;margin:6px 0}
 .sndtoggle{background:var(--sumi3);border:2px solid #56417f;color:var(--washi);font-family:inherit;font-weight:800;
   font-size:13px;border-radius:10px;padding:8px 10px;cursor:pointer;white-space:nowrap;min-width:96px;text-align:left}
@@ -435,6 +447,10 @@ input.txt{width:100%;background:#1a1330;border:2px solid #56417f;border-radius:1
       <button class="btn small ghost" onclick="logout()" style="color:#cfc3ea;margin-top:4px">ログアウト</button>
     </div>
     <div class="note" style="text-align:center;margin-top:20px"><span class="iph" data-i="swords" data-s="18"></span> バトルを<ruby>戦<rt>たたか</rt></ruby>い<ruby>抜<rt>ぬ</rt></ruby>くと <b style="color:var(--gold1)"><ruby>妖怪<rt>ようかい</rt></ruby>カード</b> がもらえる!<br><span class="iph" data-i="trophy" data-s="18"></span> <ruby>勝<rt>か</rt></ruby>つと <b style="color:var(--onibi)"><ruby>技<rt>わざ</rt></ruby>カード</b> もついてくる!(にげたら0<ruby>枚<rt>まい</rt></ruby>)<br>ノーマル・レアには5%で<ruby>光<rt>ひか</rt></ruby>り<ruby>輝<rt>かがや</rt></ruby>く <span style="color:var(--gold1);font-weight:800">GOLDカード</span> が…!?</div>
+    <div class="a2hs">
+      <div class="a2hs-ttl"><svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-3px"><path d="M12 3v11M12 3l-4 4M12 3l4 4" fill="none" stroke="#5eead4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 11H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-1" fill="none" stroke="#5eead4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> アプリみたいに<ruby>使<rt>つか</rt></ruby>おう!</div>
+      <div class="a2hs-body">Safariの<ruby>共有<rt>きょうゆう</rt></ruby>ボタン <svg viewBox="0 0 24 24" width="15" height="15" style="vertical-align:-2px"><path d="M12 3v11M12 3l-3.5 3.5M12 3l3.5 3.5" fill="none" stroke="#cfc3ea" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><rect x="4" y="10" width="16" height="11" rx="2" fill="none" stroke="#cfc3ea" stroke-width="2"/></svg> から<br><b style="color:var(--gold1)">「ホーム<ruby>画面<rt>がめん</rt></ruby>に<ruby>追加<rt>ついか</rt></ruby>」</b>をタップすると<br><ruby>全画面<rt>ぜんがめん</rt></ruby>でサクサク<ruby>遊<rt>あそ</rt></ruby>べるよ!</div>
+    </div>
   </div>
 
   <!-- ===== CPUレベル選択 ===== -->
@@ -2231,6 +2247,8 @@ window.addEventListener("beforeunload",()=>teardownNet());
   document.querySelectorAll(".hph").forEach(el=>{el.innerHTML=handSVG(el.dataset.h,20)});
   // 見出し・ボタンのアイコンプレースホルダーにSVGを描き込む
   document.querySelectorAll(".iph").forEach(el=>{el.innerHTML=iconSVG(el.dataset.i,+el.dataset.s||24)});
+  // すでにホーム画面から起動しているiOSでは追加案内を隠す
+  try{if(window.navigator.standalone===true){const a=document.querySelector(".a2hs");if(a)a.style.display="none"}}catch(e){}
   // 自動再生ポリシー対策:最初のタップ/クリックでBGMを起動
   const kick=()=>{if(bgmWantScene&&!bgmMuted)playBgm(bgmWantScene);
     document.removeEventListener("pointerdown",kick);document.removeEventListener("touchstart",kick);document.removeEventListener("click",kick)};
