@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://kaidindin.github.io/yokai_janken/sitemap.xml

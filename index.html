@@ -6,10 +6,59 @@
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0d0a16">
 <meta name="supported-color-schemes" content="dark">
+<!-- PWA(ホーム画面に追加してアプリのように使える) -->
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="妖怪じゃんけん">
+<meta name="mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
-<title>妖怪じゃんけん大戦</title>
+<title>妖怪じゃんけん大戦 | カイディンディン</title>
+<meta name="description" content="妖怪じゃんけん大戦は、日本全国47都道府県の妖怪＋海外モンスター全57体を集めて戦う、じゃんけんカードバトルゲーム。3体編成のチーム戦・地縁ボーナス・必殺技・特殊技カード・CPUとの読み合いが楽しめる。ピン芸人カイディンディンが制作。無料でブラウザですぐ遊べる。">
+<meta name="keywords" content="妖怪じゃんけん大戦,妖怪,じゃんけん,カードバトル,ゲーム,カイディンディン,ピン芸人,無料ゲーム,ブラウザゲーム,妖怪ゲーム">
+<meta name="author" content="カイディンディン">
+<link rel="canonical" href="https://kaidindin.github.io/yokai_janken/">
+<!-- OGP(SNSシェア時の表示) -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="妖怪じゃんけん大戦 | カイディンディン">
+<meta property="og:description" content="全国47都道府県の妖怪＋海外モンスター全57体を集めて戦う、じゃんけんカードバトルゲーム。ピン芸人カイディンディン制作。無料でブラウザですぐ遊べる！">
+<meta property="og:url" content="https://kaidindin.github.io/yokai_janken/">
+<meta property="og:site_name" content="妖怪じゃんけん大戦">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="妖怪じゃんけん大戦 | カイディンディン">
+<meta name="twitter:description" content="全国の妖怪57体を集めて戦うじゃんけんカードバトル！ピン芸人カイディンディン制作。無料でブラウザですぐ遊べる！">
+<!-- 構造化データ(Googleに内容を伝える) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "妖怪じゃんけん大戦",
+  "alternateName": ["ようかいじゃんけんたいせん", "妖怪じゃんけん"],
+  "url": "https://kaidindin.github.io/yokai_janken/",
+  "description": "日本全国47都道府県の妖怪＋海外モンスター全57体を集めて戦う、じゃんけんカードバトルゲーム。3体編成のチーム戦・地縁ボーナス・必殺技・特殊技カード・CPUとの読み合いが楽しめる無料ブラウザゲーム。",
+  "genre": ["カードゲーム", "対戦ゲーム", "じゃんけん"],
+  "gamePlatform": "Web Browser",
+  "applicationCategory": "Game",
+  "operatingSystem": "Any",
+  "inLanguage": "ja",
+  "author": {
+    "@type": "Person",
+    "name": "カイディンディン",
+    "alternateName": "kaidindin",
+    "jobTitle": "ピン芸人"
+  },
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "JPY"
+  }
+}
+</script>
 <meta name="description" content="47都道府県の妖怪+海外モンスターが集結!キャラカードと技カードでじゃんけんバトル。CPU対戦・オンライン対戦・コレクション機能つき。">
 <style>
 :root{
@@ -2186,6 +2235,21 @@ window.addEventListener("beforeunload",()=>teardownNet());
   const kick=()=>{if(bgmWantScene&&!bgmMuted)playBgm(bgmWantScene);
     document.removeEventListener("pointerdown",kick);document.removeEventListener("touchstart",kick);document.removeEventListener("click",kick)};
   document.addEventListener("pointerdown",kick);document.addEventListener("touchstart",kick);document.addEventListener("click",kick);
+  // サイトを閉じる/離れる(タブ切替・ホーム画面へ)とBGMを止め、戻ったら再開
+  document.addEventListener("visibilitychange",()=>{
+    if(document.hidden){
+      if(bgmAudio)bgmAudio.pause(); // バックグラウンドでは停止
+    }else{
+      // 戻ってきたら、その画面のBGMを再開(ミュート中は鳴らさない)
+      if(bgmWantScene&&!bgmMuted){
+        const a=ensureBgm();const c=ac();if(c&&c.state==="suspended")c.resume();
+        const pr=a.play();if(pr&&pr.catch)pr.catch(()=>{});
+      }
+    }
+  });
+  // iOS Safari向け(タブ切替・アプリ切替時)
+  window.addEventListener("pagehide",()=>{if(bgmAudio)bgmAudio.pause()});
+  window.addEventListener("blur",()=>{if(bgmAudio&&document.hidden)bgmAudio.pause()});
   let sess=null;try{sess=localStorage.getItem(LSS)}catch(e){}
   const accts=getAccts();
   if(sess&&accts[sess]){

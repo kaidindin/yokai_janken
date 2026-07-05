@@ -1,0 +1,26 @@
+{
+  "name": "妖怪じゃんけん大戦",
+  "short_name": "妖怪じゃんけん",
+  "description": "全国47都道府県の妖怪＋海外モンスター全57体を集めて戦う、じゃんけんカードバトルゲーム。カイディンディン制作。",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d0a16",
+  "theme_color": "#0d0a16",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
