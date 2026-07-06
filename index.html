@@ -197,8 +197,24 @@ h2.sect{font-size:21px;margin:16px 0 6px;letter-spacing:.04em;color:var(--washi)
 .waza .h{font-size:24px}
 .waza .wn{font-weight:800;font-size:14px}
 .waza .we{font-size:11px;color:var(--onibi)}
-.waza.sel{border-color:var(--onibi);background:#1c3a33}
+.waza.sel{border-color:var(--onibi);background:#1c3a33;border-width:2px}
 .waza.locked{opacity:.35;pointer-events:none}
+.wazahead{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-top:16px;margin-bottom:2px;padding-bottom:6px;border-bottom:1px solid #2a2640}
+.wazacur{font-size:11px;color:#9a94b8}
+.wazacur b{color:var(--gold1)}
+.wazaeff{color:var(--onibi)}
+.setnow{font-size:10px;font-weight:900;color:var(--onibi);background:rgba(94,234,212,.15);padding:1px 6px;border-radius:6px;margin-left:4px}
+.stup{display:inline-block;font-weight:900;font-size:11px;padding:1px 6px;border-radius:5px;margin-right:3px}
+.stup.atk{background:rgba(255,107,74,.18);color:#ff9a7a}
+.stup.def{background:rgba(94,150,234,.18);color:#8fb8ea}
+.stup.hp{background:rgba(120,220,120,.18);color:#8ad88a}
+.spwe{color:#c9b3ff!important}
+.foresee-hint{background:linear-gradient(135deg,#3a2a5c,#2a2340);border:2px solid #a985ff;border-radius:12px;
+  padding:8px 12px;margin:6px 0;text-align:center;font-size:14px;color:var(--washi);
+  display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 0 12px rgba(169,133,255,.35)}
+.foresee-hint b{color:#c9b3ff}
+.foresee-hint .iph2{font-size:18px}
+.foresee-hint svg{vertical-align:middle}
 
 /* ---------- バトル ---------- */
 .fighter{background:var(--sumi2);border:1px solid #39355a;border-radius:16px;padding:10px;display:flex;gap:12px;align-items:center;margin-top:10px}
@@ -552,6 +568,7 @@ input.txt{width:100%;background:#1a1330;border:2px solid #56417f;border-radius:1
     </div>
     <div class="team-dots" id="me-dots"></div>
     <button class="btn primary spbtn" id="btn-sp" onclick="useSpecial()" style="display:none"><span class="em iph" data-i="tengu" data-s="24"></span>必殺・妖力解放!(妖力MAX)</button>
+    <div id="foresee-hint" class="foresee-hint" style="display:none"></div>
     <div class="handbtns">
       <button class="handbtn" id="hb-g" onclick="playHand('g')"><span class="he" id="he-g"></span><span class="hn">グー</span><span class="hw" id="hw-g"></span></button>
       <button class="handbtn" id="hb-c" onclick="playHand('c')"><span class="he" id="he-c"></span><span class="hn">チョキ</span><span class="hw" id="hw-c"></span></button>
@@ -1601,14 +1618,27 @@ function openSelect(){
   });
   const wbox=document.getElementById("sel-waza");wbox.innerHTML="";
   ["g","c","p"].forEach(h=>{
-    const lbl=document.createElement("div");lbl.className="note";lbl.style.marginTop="12px";lbl.innerHTML=`<b style="color:var(--washi);display:inline-flex;align-items:center;gap:4px">${handSVG(h,18)} ${HANDNAME[h]}の技</b>`;wbox.appendChild(lbl);
+    const cur=WAZA.find(w=>w.id===selWaza[h]); // 今この手にセット中の技
+    const lbl=document.createElement("div");lbl.className="wazahead";
+    lbl.innerHTML=`<b style="color:var(--washi);display:inline-flex;align-items:center;gap:5px">${handSVG(h,20)} ${HANDNAME[h]}の技</b>`+
+      `<span class="wazacur">セット中: <b>${cur?cur.name:"素手"}</b>${cur&&!cur.sp&&(cur.eff.atk||cur.eff.def||cur.eff.hp)?` <span class="wazaeff">(${effText(cur.eff)})</span>`:""}</span>`;
+    wbox.appendChild(lbl);
     WAZA.filter(w=>w.hand===h).forEach(w=>{
       const owned=(save.waza[w.id]||0)>0;
       const d=document.createElement("div");
       d.className="waza"+(selWaza[h]===w.id?" sel":"")+(owned?"":" locked");
-      d.innerHTML=`<span class="h">${handSVG(h,24)}</span><div><div class="wn">${w.name}${w.sp?` <span class="sptag">特${w.rar}</span>`:""}${owned?"":" 🔒未入手"}</div><div class="we">${wazaDescText(w)}</div></div>`;
-      if(owned)d.onclick=()=>{play("tap");selWaza[h]=w.id;
-        document.querySelectorAll("#sel-waza .waza").forEach(x=>x.classList.remove("sel"));d.classList.add("sel")};
+      // 能力変化を色付きバッジで表示
+      let effBadge="";
+      if(w.sp){ effBadge=`<span class="we spwe">${w.spText}</span>`; }
+      else{
+        const parts=[];
+        if(w.eff.atk)parts.push(`<span class="stup atk">攻+${w.eff.atk}</span>`);
+        if(w.eff.def)parts.push(`<span class="stup def">防+${w.eff.def}</span>`);
+        if(w.eff.hp)parts.push(`<span class="stup hp">HP+${w.eff.hp}</span>`);
+        effBadge=parts.length?`<span class="we">${parts.join(" ")}</span>`:`<span class="we" style="color:#7a7596">ボーナスなし</span>`;
+      }
+      d.innerHTML=`<span class="h">${handSVG(h,24)}</span><div style="flex:1"><div class="wn">${w.name}${w.sp?` <span class="sptag">特${w.rar}</span>`:""}${owned?"":' <span style="color:#8a84b0;font-size:11px">🔒未入手</span>'}${selWaza[h]===w.id?' <span class="setnow">✓セット中</span>':""}</div>${effBadge}</div>`;
+      if(owned)d.onclick=()=>{play("tap");selWaza[h]=w.id;openSelect()}; // 再描画でヘッダーも更新
       wbox.appendChild(d);
     });
   });
@@ -1747,7 +1777,7 @@ function updateForesee(){
   const el=document.getElementById("foresee-hint");if(!el)return;
   if(B&&!B.over&&B.me&&B.me.foreseeLeft>0&&battleMode==="cpu"&&B.cpuPlan){
     el.style.display="block";
-    el.innerHTML=`<span class="iph2">🔮</span> <b>見切りの目</b>:相手は ${handSVG(B.cpuPlan,22)} を出しそう…(あと${B.me.foreseeLeft}回)`;
+    el.innerHTML=`<span class="iph2">🔮</span> <b>見切りの目</b>:相手の手は ${handSVG(B.cpuPlan,26)} だ!(あと${B.me.foreseeLeft}回)`;
   }else el.style.display="none";
 }
 function renderDots(){
@@ -1800,10 +1830,14 @@ function planCpu(){
   if(!B||B.over)return;
   const lv=cpuLevel;
   B.cpuPlan=null;hideTell();
+  // 見切りの目が有効なら、この後どのセリフになってもCPUの手を確定して見せる
+  const foreseeing = B.me && B.me.foreseeLeft>0;
   // たまに無言のターン(頻度は低め)
   if(Math.random()<0.12){
     showTell(pickA(TELLS.silent),true);
-    return; // 手はcpuChooseに任せる(cpuPlan=nullのまま)
+    if(foreseeing)B.cpuPlan=cpuChoose(); // 見切り中は無言でも手を見せる
+    updateForesee();
+    return; // 手はcpuChooseに任せる(見切りなしならcpuPlan=nullのまま)
   }
   // セリフの種類を決める。counter/norepeatは「直前の手」が必要なので1手目は除外
   const hasMyLast=!!B.myLast;   // 自分(プレイヤー)の直前の手
@@ -1831,12 +1865,13 @@ function planCpu(){
   }else if(ty==="fav"){hand=B.enemy.fav;line=pickA(TELLS.fav)}
   else if(ty==="counter"){hand=counterOf(B.myLast);line=pickA(TELLS.counter)}
   else if(ty==="norepeat"){hand=pickA(["g","c","p"].filter(x=>x!==B.cpuLast));line=pickA(TELLS.norepeat)}
-  else{ // taunt / lowhp は手を明かさない煽りセリフ(cpuPlanはnullのまま=読めない)
+  else{ // taunt / lowhp は手を明かさない煽りセリフ
     line=pickA(ty==="lowhp"?TELLS.lowhp:TELLS.taunt);
-    B.cpuPlan=null;showTell(line);return;
+    B.cpuPlan = foreseeing ? cpuChoose() : null; // 見切り中は煽りでも手を見せる
+    showTell(line);updateForesee();return;
   }
   B.cpuPlan=hand;
-  showTell(line);
+  showTell(line);updateForesee();
 }
 function updateHP(){
   [["me",B.me],["enemy",B.enemy]].forEach(([k,f])=>{
