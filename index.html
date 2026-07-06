@@ -1298,22 +1298,41 @@ async function login(){
   if(!name||!pass){authMsg("なまえとパスワードを入れてね");return}
   const h=await hashPass(pass);
   const accts=getAccts();
-  if(accts[name]){
-    if(accts[name].pass!==h){authMsg("パスワードがちがいます");return}
-    save=accts[name].data;fixSave();
-  }else{
-    const c=await sbClient();
-    if(!c){authMsg("この端末にその名前の記録がありません。新規登録してね");return}
+  const localAcct=accts[name];
+  // ローカルにあってもパスワードが合わなければ弾く
+  if(localAcct&&localAcct.pass!==h){authMsg("パスワードがちがいます");return}
+  // クラウドから最新データを取得(別端末で進めた記録を引き継ぐ)
+  const c=await sbClient();
+  let cloudData=null,cloudFound=false,cloudPassOk=true;
+  if(c){
     try{
       const {data:rows,error}=await c.from("yk_players").select("*").eq("username",name).limit(1);
-      if(error||!rows||!rows.length){authMsg("その名前の記録が見つかりません");return}
-      if(rows[0].pass!==h){authMsg("パスワードがちがいます");return}
-      save=rows[0].data||null;if(!save)initSave();fixSave();
-      accts[name]={pass:h,data:save};setAccts(accts);
-    }catch(e){authMsg("通信エラー。電波を確認してね");return}
+      if(!error&&rows&&rows.length){
+        cloudFound=true;
+        if(rows[0].pass!==h){cloudPassOk=false;}
+        else{cloudData=rows[0].data||null;}
+      }
+    }catch(e){}
   }
+  // クラウドにあってパスワード不一致なら弾く
+  if(cloudFound&&!cloudPassOk){authMsg("パスワードがちがいます");return}
+  // データの決定:クラウドがあればクラウド優先、なければローカル
+  if(cloudData){
+    save=cloudData;
+  }else if(localAcct){
+    save=localAcct.data;
+  }else if(cloudFound){
+    save=null;initSave();
+  }else{
+    // ローカルにもクラウドにも無い
+    authMsg(c?"その名前の記録が見つかりません":"この端末にその名前の記録がありません。新規登録してね");return;
+  }
+  fixSave();
+  accts[name]={pass:h,data:save};setAccts(accts);
   try{localStorage.setItem(LSS,name)}catch(e){}
   currentUser=name;
+  // ログイン時点のデータをクラウドにも反映(初回同期)
+  if(c){try{await c.from("yk_players").upsert({username:name,pass:h,data:save,updated_at:new Date().toISOString()})}catch(e){}}
   enterGame();
 }
 function fixSave(){
