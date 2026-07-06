@@ -377,6 +377,24 @@ input.txt{width:100%;background:#1a1330;border:2px solid #56417f;border-radius:1
 .a2hs-body rt{font-size:8px}
 /* すでにホーム画面から起動している時は案内を隠す */
 @media (display-mode: standalone){.a2hs{display:none}}
+.cleartime{margin-top:10px;font-size:15px;color:var(--washi)}
+.cleartime b{color:var(--gold1);font-size:22px;font-family:"Mochiy Pop One",sans-serif;margin-left:6px}
+.ranklist{margin:10px 0;background:var(--sumi2);border:1px solid #39355a;border-radius:14px;overflow:hidden}
+.rank-row{display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid #2a2640;font-size:14px}
+.rank-row:last-child{border-bottom:none}
+.rank-row.mine{background:linear-gradient(90deg,rgba(94,234,212,.15),transparent)}
+.rank-row .rk-rank{width:30px;text-align:center;font-size:18px;flex-shrink:0}
+.rank-row .rk-no{font-weight:900;color:#8a84b0;font-size:14px}
+.rank-row .rk-name{flex:1;font-weight:800;color:var(--washi);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rank-row.mine .rk-name{color:var(--onibi)}
+.rank-row .rk-lv{font-size:11px;color:#8a84b0;flex-shrink:0}
+.rank-row .rk-time{font-weight:900;color:var(--gold1);flex-shrink:0;font-variant-numeric:tabular-nums}
+.rank-lvlabel{font-size:12px;color:#8a84b0;margin:10px 0 6px;text-align:center}
+.rank-tabs{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:8px}
+.rank-tab{width:40px;height:40px;border-radius:10px;border:2px solid #39355a;background:var(--sumi2);
+  color:var(--washi);font-weight:900;font-size:16px;font-family:"Mochiy Pop One",sans-serif;cursor:pointer}
+.rank-tab.on{border-color:var(--gold1);background:linear-gradient(160deg,#3a2f10,#2a2210);color:var(--gold1);box-shadow:0 0 10px rgba(255,217,74,.4)}
+.rank-tab:active{transform:scale(.94)}
 .soundrow{display:flex;align-items:center;gap:10px;margin:6px 0}
 .sndtoggle{background:var(--sumi3);border:2px solid #56417f;color:var(--washi);font-family:inherit;font-weight:800;
   font-size:13px;border-radius:10px;padding:8px 10px;cursor:pointer;white-space:nowrap;min-width:96px;text-align:left}
@@ -433,6 +451,7 @@ input.txt{width:100%;background:#1a1330;border:2px solid #56417f;border-radius:1
     <button class="btn primary" onclick="startCpuFlow()"><span class="em iph" data-i="oni" data-s="24"></span>CPU<ruby>対戦<rt>たいせん</rt></ruby><span style="float:right;font-size:12px;opacity:.85;margin-top:5px">つよさ1〜10</span></button>
     <button class="btn" onclick="startOnlineFlow()"><span class="em iph" data-i="globe" data-s="24"></span>オンライン<ruby>対戦<rt>たいせん</rt></ruby><span style="float:right;font-size:12px;opacity:.85;margin-top:5px">あいことばで<ruby>対戦<rt>たいせん</rt></ruby></span></button>
     <button class="btn" onclick="openCollection()"><span class="em iph" data-i="book" data-s="24"></span>コレクション<span class="prog" style="float:right;font-size:12px;margin-top:5px" id="home-prog"></span></button>
+    <button class="btn" onclick="openRanking()"><span class="em iph" data-i="trophy" data-s="24"></span>ランキング<span style="float:right;font-size:12px;opacity:.85;margin-top:5px">クリアタイム<ruby>順<rt>じゅん</rt></ruby></span></button>
     <div class="record" id="home-record"></div>
     <div class="soundpanel">
       <div class="soundrow">
@@ -550,9 +569,23 @@ input.txt{width:100%;background:#1a1330;border:2px solid #56417f;border-radius:1
       <div class="subtitle mincho" id="result-sub"></div>
     </div>
     <div style="text-align:center" id="result-detail"></div>
+    <div id="result-rank" style="display:none">
+      <h2 class="sect mincho" id="result-rank-ttl" style="margin-top:8px"><span class="iph" data-i="trophy" data-s="22"></span> クリアタイム TOP10</h2>
+      <div id="result-rank-box"></div>
+    </div>
     <button class="btn" id="btn-share-win" onclick="shareWin()" style="display:none"><span class="em">📣</span>結果をシェア</button>
     <button class="btn primary" onclick="goHome()"><span class="em">🏠</span>ホームにもどる</button>
     <button class="btn" id="btn-rematch" onclick="rematch()"><span class="em">🔁</span>もう一回たたかう</button>
+  </div>
+
+  <!-- ===== ランキング ===== -->
+  <div class="screen" id="scr-ranking">
+    <div class="backbar"><button class="backbtn" onclick="go('scr-home')">◀ もどる</button></div>
+    <h2 class="sect mincho"><span class="iph" data-i="trophy" data-s="24"></span> クリアタイム ランキング</h2>
+    <p class="note">CPU対戦に勝つと、かかった時間が自動で登録される。<b style="color:var(--onibi)">CPUの強さ(レベル)ごとに別ランキング。タイムが短いほど上位!</b></p>
+    <div class="rank-lvlabel">CPUレベルを<ruby>選<rt>えら</rt></ruby>ぶ</div>
+    <div id="rank-tabs" class="rank-tabs"></div>
+    <div id="rank-box"></div>
   </div>
 
   <!-- ===== コレクション ===== -->
@@ -637,8 +670,8 @@ input.txt{width:100%;background:#1a1330;border:2px solid #56417f;border-radius:1
    1. supabase.com でプロジェクト作成
    2. Settings → API の URL と anon public キーを下に貼る
    ===================================================== */
-const SUPABASE_URL = "";   // 例: "https://xxxx.supabase.co"
-const SUPABASE_KEY = "";   // 例: "eyJhbGciOi..."
+const SUPABASE_URL = "https://xqxitgoqvoyyywqcmorf.supabase.co";   // yokai_jankenプロジェクト
+const SUPABASE_KEY = "sb_publishable_P55RHujFU6if0b4LETX2_Q_X-LVlSWJ";   // anon public キー
 /* アカウント同期も使う場合はSupabaseのSQL Editorで以下を実行:
    create table yk_players (username text primary key, pass text not null, data jsonb, updated_at timestamptz default now());
    alter table yk_players enable row level security;
@@ -1300,6 +1333,76 @@ function logout(){
   try{localStorage.removeItem(LSS)}catch(e){}
   currentUser=null;location.reload();
 }
+/* ================= クリアタイム・ランキング ================= */
+function fmtTime(ms){
+  const s=Math.floor(ms/1000), m=Math.floor(s/60), sec=s%60, cs=Math.floor((ms%1000)/10);
+  if(m>0)return `${m}分${String(sec).padStart(2,"0")}秒`;
+  return `${sec}.${String(cs).padStart(2,"0")}秒`;
+}
+// 勝利時にランキングへ登録し、TOP10を返す(Supabase未設定/テーブル無しでも落ちない)
+async function submitRanking(ms,level){
+  const c=await sbClient();if(!c)return null;
+  try{
+    await c.from("yk_ranking").insert({username:currentUser,time_ms:Math.round(ms),level:level});
+  }catch(e){}
+  return await fetchRanking(level);
+}
+async function fetchRanking(level){
+  const c=await sbClient();if(!c)return null;
+  try{
+    // 指定レベルのみ、タイムが短い順にTOP10(同一ユーザーは最速のみ残す)
+    let q=c.from("yk_ranking").select("username,time_ms,level").order("time_ms",{ascending:true}).limit(300);
+    if(level!=null)q=q.eq("level",level);
+    const {data}=await q;
+    if(!data)return [];
+    const best={};
+    data.forEach(r=>{ if(!best[r.username]||r.time_ms<best[r.username].time_ms) best[r.username]=r; });
+    return Object.values(best).sort((a,b)=>a.time_ms-b.time_ms).slice(0,10);
+  }catch(e){return null}
+}
+function renderRankingList(rows,box,myTime){
+  if(rows===null){box.innerHTML=`<p class="note" style="text-align:center;color:#6a6490">ランキングは公開後(オンライン設定済み)に表示されます。<br>Supabaseに <b>yk_ranking</b> テーブルの作成が必要です。</p>`;return}
+  if(!rows.length){box.innerHTML=`<p class="note" style="text-align:center;color:#6a6490">このレベルはまだ記録がありません。最初のランカーになろう!</p>`;return}
+  let h='<div class="ranklist">';
+  rows.forEach((r,i)=>{
+    const medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":`<span class="rk-no">${i+1}</span>`;
+    const mine=(r.username===currentUser)?" mine":"";
+    h+=`<div class="rank-row${mine}"><div class="rk-rank">${medal}</div>`+
+       `<div class="rk-name">${escapeHTML(r.username)}</div>`+
+       `<div class="rk-time">${fmtTime(r.time_ms)}</div></div>`;
+  });
+  h+='</div>';
+  box.innerHTML=h;
+}
+function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+let rankViewLevel=1;
+function renderRankTabs(){
+  const tabs=document.getElementById("rank-tabs");if(!tabs)return;
+  let h="";
+  for(let lv=1;lv<=10;lv++){
+    h+=`<button class="rank-tab${lv===rankViewLevel?" on":""}" onclick="selectRankLevel(${lv})">${lv}</button>`;
+  }
+  tabs.innerHTML=h;
+}
+async function selectRankLevel(lv){
+  play("tap");
+  rankViewLevel=lv;
+  renderRankTabs();
+  const box=document.getElementById("rank-box");
+  box.innerHTML=`<p class="note" style="text-align:center;color:#6a6490">読み込み中…</p>`;
+  const rows=await fetchRanking(lv);
+  renderRankingList(rows,box);
+}
+async function openRanking(){
+  play("tap");
+  go("scr-ranking");
+  renderRankTabs();
+  const box=document.getElementById("rank-box");
+  box.innerHTML=`<p class="note" style="text-align:center;color:#6a6490">読み込み中…</p>`;
+  const rows=await fetchRanking(rankViewLevel);
+  renderRankingList(rows,box);
+}
+
 function scheduleSync(){
   if(!currentUser||!SUPABASE_URL||!SUPABASE_KEY)return;
   clearTimeout(syncTimer);
@@ -1346,7 +1449,7 @@ function showGetModal(result,cb){
   document.getElementById("modal-get").classList.add("show");
   getModalCb=cb;
 }
-let getModalCb=null,lastGetResult=null,lastWinLevel=null;
+let getModalCb=null,lastGetResult=null,lastWinLevel=null,lastClearMs=null;
 function closeGetModal(){document.getElementById("modal-get").classList.remove("show");if(getModalCb){const f=getModalCb;getModalCb=null;f()}}
 
 /* ================= SNSシェア ================= */
@@ -1571,7 +1674,8 @@ function cpuTeam(lv){
 }
 function startBattle(myTeam,enTeam){
   B={myTeam,enTeam,me:myTeam.list[0],enemy:enTeam.list[0],
-     round:1,over:false,myHand:null,opHand:null,lock:false,charge:0,myLast:null,cpuLast:null,oppHands:[],myHands:[],cpuPlan:null,spUsed:false};
+     round:1,over:false,myHand:null,opHand:null,lock:false,charge:0,myLast:null,cpuLast:null,oppHands:[],myHands:[],cpuPlan:null,spUsed:false,
+     startTime:Date.now()};
   document.getElementById("blog").innerHTML="";
   document.getElementById("clash").textContent="";
   logB(`⚔️ 3対3のチーム戦、開始!`);
@@ -1984,6 +2088,8 @@ function finishMatch(iWin){
   document.getElementById("btn-sp").style.display="none";
   if(iWin)save.wins++;else save.losses++;persist();
   lastWinLevel=iWin&&battleMode==="cpu"?cpuLevel:null; // 勝利シェア用にレベルを保持
+  // クリアタイム(CPU戦の勝利のみランキング対象)
+  lastClearMs=(iWin&&battleMode==="cpu"&&B.startTime)?(Date.now()-B.startTime):null;
   if(battleMode==="online")netSend({t:"end"});
   play(iWin?"win":"lose");
   if(iWin)playWinBgm(); // 勝利BGMに切り替え(結果画面まで流れる)
@@ -2030,9 +2136,25 @@ function showResult(iWin,fled){
   document.getElementById("result-title").textContent=iWin?"勝利!":fled?"降参…":"敗北…";
   document.getElementById("result-title").style.color=iWin?"":"#9a94b8";
   document.getElementById("result-sub").textContent=fled?"にげたのでカードはもらえなかった…":(iWin?"みごと妖怪バトルを制した!":"つぎは勝てる、きっと。");
-  document.getElementById("result-detail").innerHTML=iWin?`<div>${iconSVG("trophy",72)}</div>`:'<div style="font-size:60px">💨</div>';
+  let detail=iWin?`<div>${iconSVG("trophy",72)}</div>`:'<div style="font-size:60px">💨</div>';
+  if(iWin&&lastClearMs!=null){
+    detail+=`<div class="cleartime">クリアタイム <b>${fmtTime(lastClearMs)}</b></div>`;
+  }
+  document.getElementById("result-detail").innerHTML=detail;
   document.getElementById("btn-rematch").style.display=battleMode==="cpu"?"block":"none";
   document.getElementById("btn-share-win").style.display=iWin?"block":"none"; // 勝った時だけシェアボタン
+  // 勝利時はランキングに登録してそのレベルのTOP10表示
+  const rankWrap=document.getElementById("result-rank");
+  if(iWin&&lastClearMs!=null){
+    rankWrap.style.display="block";
+    document.getElementById("result-rank-ttl").textContent=`Lv${lastWinLevel} クリアタイム TOP10`;
+    if(lastWinLevel)rankViewLevel=lastWinLevel; // ランキング画面も同じレベルで開くように
+    const box=document.getElementById("result-rank-box");
+    box.innerHTML=`<p class="note" style="text-align:center;color:#6a6490">ランキング登録中…</p>`;
+    submitRanking(lastClearMs,lastWinLevel).then(rows=>renderRankingList(rows,box));
+  }else{
+    rankWrap.style.display="none";
+  }
   go("scr-result");renderHome();
 }
 function rematch(){play("select");openSelect()}
