@@ -264,7 +264,9 @@ h2.sect{font-size:21px;margin:16px 0 6px;letter-spacing:.04em;color:var(--washi)
 .card .fav .handsvg{display:block}
 .waza .h .handsvg,.enemy-hist .handsvg{vertical-align:middle}
 .handbtn .hn{font-size:12px;font-weight:800;margin-top:4px;display:block}
-.handbtn .hw{font-size:10px;color:var(--onibi);display:block;margin-top:2px;min-height:12px}
+.handbtn .hw{font-size:10px;color:var(--onibi);display:block;margin-top:3px;min-height:12px;line-height:1.5}
+.handbtn .hw-name{font-size:10px;color:var(--onibi);font-weight:700}
+.handbtn .hw .stup{font-size:9px;padding:1px 4px;margin:1px 1px 0}
 .handbtn:active{transform:scale(.94)}
 .handbtn:disabled{opacity:.4}
 .handbtn.favme{border-color:var(--gold1)}
@@ -908,7 +910,7 @@ const WAZA = [
  {id:"p3",hand:"p",name:"百鬼結界",eff:{def:20,hp:15}},
  // ★特殊効果技(HP攻防以外)★ rar: N/R/SR/MR
  {id:"gS1",hand:"g",name:"不屈の構え",rar:"R",eff:{},sp:"guard",spText:"一度だけ、力尽きる一撃をHP1でこらえる"},
- {id:"cS1",hand:"c",name:"見切りの目",rar:"SR",eff:{},sp:"foresee",spN:3,spText:"バトル開始から3ターン、相手の手が見える"},
+ {id:"cS1",hand:"c",name:"見切りの目",rar:"SR",eff:{},sp:"foresee",spN:1,spText:"バトル開始の最初の1手だけ、相手の手が見える"},
  {id:"pS1",hand:"p",name:"あいこ結界",rar:"R",eff:{},sp:"aikoGuard",spText:"あいこのとき、ダメージを受けない"},
  {id:"pS2",hand:"p",name:"妖気吸引",rar:"SR",eff:{},sp:"lifesteal",spN:0.2,spText:"じゃんけんに勝つと、与えたダメージの2割ぶんHP回復"},
  {id:"gS2",hand:"g",name:"呪いの反撃",rar:"SR",eff:{},sp:"thorns",spN:0.35,spText:"攻撃を受けたとき、そのダメージの35%を相手に反射"},
@@ -1616,7 +1618,13 @@ function openSelect(){
       grid.appendChild(el);
     });
   });
-  const wbox=document.getElementById("sel-waza");wbox.innerHTML="";
+  renderWazaSelect();
+  updateFightBtn();
+  go("scr-select");
+}
+function renderWazaSelect(){
+  const wbox=document.getElementById("sel-waza");if(!wbox)return;
+  wbox.innerHTML="";
   ["g","c","p"].forEach(h=>{
     const cur=WAZA.find(w=>w.id===selWaza[h]); // 今この手にセット中の技
     const lbl=document.createElement("div");lbl.className="wazahead";
@@ -1638,12 +1646,11 @@ function openSelect(){
         effBadge=parts.length?`<span class="we">${parts.join(" ")}</span>`:`<span class="we" style="color:#7a7596">ボーナスなし</span>`;
       }
       d.innerHTML=`<span class="h">${handSVG(h,24)}</span><div style="flex:1"><div class="wn">${w.name}${w.sp?` <span class="sptag">特${w.rar}</span>`:""}${owned?"":' <span style="color:#8a84b0;font-size:11px">🔒未入手</span>'}${selWaza[h]===w.id?' <span class="setnow">✓セット中</span>':""}</div>${effBadge}</div>`;
-      if(owned)d.onclick=()=>{play("tap");selWaza[h]=w.id;openSelect()}; // 再描画でヘッダーも更新
+      // クリック時は画面遷移せず技部分だけ再描画(上部へ戻らない)
+      if(owned)d.onclick=()=>{play("tap");selWaza[h]=w.id;renderWazaSelect()};
       wbox.appendChild(d);
     });
   });
-  updateFightBtn();
-  go("scr-select");
 }
 function togglePick(id,gold,el){
   play("tap");
@@ -1764,7 +1771,17 @@ function refreshActive(){
   document.getElementById("me-hist").innerHTML=B.myHands&&B.myHands.length?"あなたの手: "+B.myHands.slice(-4).map(x=>handSVG(x,18)).join(" "):"";
   ["g","c","p"].forEach(h=>{
     const w=wazaById(me.waza[h]);
-    document.getElementById("hw-"+h).textContent=(w.eff.atk||w.eff.def||w.sp)?w.name:"";
+    // 技名+能力上昇バッジを表示
+    let hw="";
+    if(w.sp){ hw=`<span class="hw-name">${w.name}</span>`; }
+    else if(w.eff.atk||w.eff.def||w.eff.hp){
+      const parts=[];
+      if(w.eff.atk)parts.push(`<span class="stup atk">攻+${w.eff.atk}</span>`);
+      if(w.eff.def)parts.push(`<span class="stup def">防+${w.eff.def}</span>`);
+      if(w.eff.hp)parts.push(`<span class="stup hp">HP+${w.eff.hp}</span>`);
+      hw=`<span class="hw-name">${w.name}</span><br>${parts.join("")}`;
+    }
+    document.getElementById("hw-"+h).innerHTML=hw;
     document.getElementById("he-"+h).innerHTML=handSVG(h,50);
     const btn=document.getElementById("hb-"+h);
     btn.classList.toggle("favme",me.fav===h);
