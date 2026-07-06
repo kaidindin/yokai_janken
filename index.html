@@ -1348,20 +1348,35 @@ async function submitRanking(ms,level){
   return await fetchRanking(level);
 }
 async function fetchRanking(level){
-  const c=await sbClient();if(!c)return null;
+  const c=await sbClient();if(!c){lastRankErr="no-config";return null}
   try{
     // 指定レベルのみ、タイムが短い順にTOP10(同一ユーザーは最速のみ残す)
     let q=c.from("yk_ranking").select("username,time_ms,level").order("time_ms",{ascending:true}).limit(300);
     if(level!=null)q=q.eq("level",level);
-    const {data}=await q;
+    const {data,error}=await q;
+    if(error){lastRankErr=error.message||"error";return null}
     if(!data)return [];
     const best={};
     data.forEach(r=>{ if(!best[r.username]||r.time_ms<best[r.username].time_ms) best[r.username]=r; });
+    lastRankErr=null;
     return Object.values(best).sort((a,b)=>a.time_ms-b.time_ms).slice(0,10);
-  }catch(e){return null}
+  }catch(e){lastRankErr=(e&&e.message)||"exception";return null}
 }
+let lastRankErr=null;
 function renderRankingList(rows,box,myTime){
-  if(rows===null){box.innerHTML=`<p class="note" style="text-align:center;color:#6a6490">ランキングは公開後(オンライン設定済み)に表示されます。<br>Supabaseに <b>yk_ranking</b> テーブルの作成が必要です。</p>`;return}
+  if(rows===null){
+    let msg;
+    if(lastRankErr==="no-config"){
+      msg="ランキングはオンライン設定後に表示されます。";
+    }else if(lastRankErr&&/relation|does not exist|table|not find/i.test(lastRankErr)){
+      msg="Supabaseに <b>yk_ranking</b> テーブルの作成が必要です。";
+    }else if(lastRankErr&&/JWT|apikey|Invalid|401|permission|policy|row-level/i.test(lastRankErr)){
+      msg="ランキングに接続できませんでした(認証エラー)。<br>Supabaseのキー設定を確認してね。";
+    }else{
+      msg="ランキングの読み込みに失敗しました。<br>電波状況を確認してもう一度ためしてね。";
+    }
+    box.innerHTML=`<p class="note" style="text-align:center;color:#6a6490">${msg}</p>`;return;
+  }
   if(!rows.length){box.innerHTML=`<p class="note" style="text-align:center;color:#6a6490">このレベルはまだ記録がありません。最初のランカーになろう!</p>`;return}
   let h='<div class="ranklist">';
   rows.forEach((r,i)=>{
@@ -2300,8 +2315,16 @@ function loadSupabase(){
   return new Promise((res,rej)=>{
     if(window.supabase)return res();
     const s=document.createElement("script");
-    s.src="https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.39.3/supabase.min.js";
-    s.onload=res;s.onerror=()=>rej(new Error("supabase-js読み込み失敗"));
+    // sb_publishable_ 形式のキーに対応した新しめのバージョンを使う
+    s.src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.min.js";
+    s.onload=res;
+    s.onerror=()=>{
+      // フォールバック:別CDN
+      const s2=document.createElement("script");
+      s2.src="https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.58.0/supabase.min.js";
+      s2.onload=res;s2.onerror=()=>rej(new Error("supabase-js読み込み失敗"));
+      document.head.appendChild(s2);
+    };
     document.head.appendChild(s);
   });
 }
