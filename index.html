@@ -370,6 +370,9 @@ h2.sect{font-size:21px;margin:16px 0 6px;letter-spacing:.04em;color:var(--washi)
 /* ---------- その他 ---------- */
 .lvgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px}
 .lvbtn{background:linear-gradient(160deg,var(--sumi3),var(--sumi2));border:2px solid #56417f;border-radius:14px;padding:16px 0;font-size:20px;font-weight:900;color:var(--gold1);cursor:pointer;font-family:inherit;box-shadow:0 3px 0 rgba(0,0,0,.25)}
+.lvbtn-ex{background:linear-gradient(160deg,#4a1530,#2a0d20);border-color:#c0392b;color:#ff6b6b;
+  box-shadow:0 3px 0 rgba(0,0,0,.35),0 0 10px rgba(192,57,43,.4)}
+.lvbtn-ex:active{transform:translateY(2px)}
 .lvbtn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.25)}
 .tabs{display:flex;gap:8px;margin-top:10px}
 .tab{flex:1;background:var(--sumi2);border:2px solid #56417f;color:#cfc3ea;border-radius:12px;padding:11px;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit}
@@ -466,7 +469,7 @@ input.txt{width:100%;background:#1a1330;border:2px solid #56417f;border-radius:1
       <div class="byline"><ruby>全国<rt>ぜんこく</rt></ruby>47<ruby>都道府県<rt>とどうふけん</rt></ruby>の<ruby>妖怪<rt>ようかい</rt></ruby> + <ruby>海外<rt>かいがい</rt></ruby>モンスター、<ruby>全<rt>ぜん</rt></ruby>57<ruby>体<rt>たい</rt></ruby></div>
       <div class="byline" id="home-user" style="color:var(--onibi);font-size:13px;margin-top:6px"></div>
     </div>
-    <button class="btn primary" onclick="startCpuFlow()"><span class="em iph" data-i="oni" data-s="24"></span>CPU<ruby>対戦<rt>たいせん</rt></ruby><span style="float:right;font-size:12px;opacity:.85;margin-top:5px">つよさ1〜10</span></button>
+    <button class="btn primary" onclick="startCpuFlow()"><span class="em iph" data-i="oni" data-s="24"></span>CPU<ruby>対戦<rt>たいせん</rt></ruby><span style="float:right;font-size:12px;opacity:.85;margin-top:5px">つよさ1〜20</span></button>
     <button class="btn" onclick="startOnlineFlow()"><span class="em iph" data-i="globe" data-s="24"></span>オンライン<ruby>対戦<rt>たいせん</rt></ruby><span style="float:right;font-size:12px;opacity:.85;margin-top:5px">あいことばで<ruby>対戦<rt>たいせん</rt></ruby></span></button>
     <button class="btn" onclick="openCollection()"><span class="em iph" data-i="book" data-s="24"></span>コレクション<span class="prog" style="float:right;font-size:12px;margin-top:5px" id="home-prog"></span></button>
     <button class="btn" onclick="openRanking()"><span class="em iph" data-i="trophy" data-s="24"></span>ランキング<span style="float:right;font-size:12px;opacity:.85;margin-top:5px">クリアタイム<ruby>順<rt>じゅん</rt></ruby></span></button>
@@ -1432,7 +1435,7 @@ let rankViewLevel=1;
 function renderRankTabs(){
   const tabs=document.getElementById("rank-tabs");if(!tabs)return;
   let h="";
-  for(let lv=1;lv<=10;lv++){
+  for(let lv=1;lv<=20;lv++){
     h+=`<button class="rank-tab${lv===rankViewLevel?" on":""}" onclick="selectRankLevel(${lv})">${lv}</button>`;
   }
   tabs.innerHTML=h;
@@ -1469,16 +1472,16 @@ function scheduleSync(){
 /* ================= ガチャ(カード獲得) ================= */
 function gachaOne(){ // バトル後の妖怪カード配布。敵が強い(高レベル)ほど高レアが出やすい
   const lv=battleMode==="cpu"?cpuLevel:5;
-  // レベルに応じてレア度の確率を上げる(Lv1: MR0.5%/SR4%/R18% 〜 Lv10: MR12%/SR26%/R38%)
-  const mr=0.005+lv*0.0115;   // Lv1≒1.6% → Lv10≒12%
-  const sr=0.04 +lv*0.022;    // Lv1≒6%   → Lv10≒26%
-  const rr=0.16 +lv*0.022;    // Lv1≒18%  → Lv10≒38%
+  // レベルに応じてレア度の確率を上げる(高レベルほど高レア)
+  const mr=Math.min(0.45,0.005+lv*0.0125);  // 上限45%
+  const sr=Math.min(0.40,0.04 +lv*0.020);   // 上限40%
+  const rr=Math.min(0.35,0.16 +lv*0.018);   // 上限35%
   const r=Math.random();
   let rar = r<mr?"MR": r<mr+sr?"SR": r<mr+sr+rr?"R":"N";
   const pool=YOKAI.filter(y=>y.rar===rar);
   const y=pool[Math.floor(Math.random()*pool.length)];
-  // GOLDも強い敵ほど出やすい(Lv1:3% 〜 Lv10:12%)
-  const goldChance=0.02+lv*0.01;
+  // GOLDも強い敵ほど出やすい(高レベルほど高確率)
+  const goldChance=Math.min(0.35,0.02+lv*0.012);
   const gold=(rar==="N"||rar==="R")&&Math.random()<goldChance;
   if(!save.cards[y.id])save.cards[y.id]={n:0,g:0};
   const isNew = gold? save.cards[y.id].g===0 : save.cards[y.id].n===0&&save.cards[y.id].g===0;
@@ -1570,7 +1573,14 @@ renderHome();
 
 /* ================= レベル選択 ================= */
 const lvgrid=document.getElementById("lvgrid");
-for(let i=1;i<=10;i++){const b=document.createElement("button");b.className="lvbtn";b.textContent=i;b.onclick=()=>pickLevel(i);lvgrid.appendChild(b)}
+for(let i=1;i<=20;i++){
+  const b=document.createElement("button");
+  b.className="lvbtn"+(i>=11?" lvbtn-ex":""); // 11以降は特別デザイン
+  b.textContent=i;
+  b.onclick=()=>pickLevel(i);
+  lvgrid.appendChild(b);
+}
+const MAX_LV=20;
 let battleMode="cpu", cpuLevel=1;
 function startCpuFlow(){play("select");battleMode="cpu";go("scr-level")}
 function pickLevel(lv){
@@ -1722,26 +1732,36 @@ function confirmSelect(){
   }
 }
 function cpuTeam(lv){
-  const rarByLv={1:["N"],2:["N"],3:["N","R"],4:["R"],5:["R"],6:["R","SR"],7:["SR"],8:["SR"],9:["SR","MR"],10:["MR"]}[lv];
+  const rarByLv={1:["N"],2:["N"],3:["N","R"],4:["R"],5:["R"],6:["R","SR"],7:["SR"],8:["SR"],9:["SR","MR"],10:["MR"]}[lv]||["MR"]; // 11以上は全MR
   const tier=lv<=2?0:lv<=4?1:lv<=7?2:3;
   const waza={g:"g"+tier,c:"c"+tier,p:"p"+tier};
-  // 地縁ボーナスをCPUも狙う(高レベルは同地方でそろえてくる)
+  const goldRate=lv>=11?0.10+(lv-10)*0.03:lv*0.02; // 11以上はGOLD率大幅アップ
+  const regionChance=lv>=11?0.9:(lv>=5?0.5:0); // 11以上はほぼ確実に地縁でそろえる
   let picks=[];
-  if(lv>=5&&Math.random()<0.5){
+  if(regionChance>0&&Math.random()<regionChance){
     const regions=[...new Set(YOKAI.filter(y=>rarByLv.includes(y.rar)).map(y=>regionOf(y.id)))];
     const reg=pickA(regions);
     const pool=YOKAI.filter(y=>rarByLv.includes(y.rar)&&regionOf(y.id)===reg);
     while(picks.length<TEAM_SIZE){
       const y=pool.length?pickA(pool):pickA(YOKAI.filter(z=>rarByLv.includes(z.rar)));
-      picks.push({id:y.id,gold:(y.rar==="N"||y.rar==="R")&&Math.random()<lv*0.02});
+      picks.push({id:y.id,gold:(y.rar==="N"||y.rar==="R"||lv>=11)&&Math.random()<goldRate});
     }
   }else{
     while(picks.length<TEAM_SIZE){
       const rar=pickA(rarByLv);const pool=YOKAI.filter(y=>y.rar===rar);const y=pickA(pool);
-      picks.push({id:y.id,gold:(rar==="N"||rar==="R")&&Math.random()<lv*0.02});
+      picks.push({id:y.id,gold:(rar==="N"||rar==="R"||lv>=11)&&Math.random()<goldRate});
     }
   }
-  return buildTeam(picks,waza);
+  const team=buildTeam(picks,waza);
+  // Lv11以上はさらに能力を底上げ(11で+8%〜20で+80%)
+  if(lv>=11){
+    const boost=1+(lv-10)*0.08;
+    team.list.forEach(f=>{
+      f.maxhp=Math.round(f.maxhp*boost);f.hp=f.maxhp;
+      f.atk=Math.round(f.atk*boost);f.def=Math.round(f.def*boost);
+    });
+  }
+  return team;
 }
 function startBattle(myTeam,enTeam){
   B={myTeam,enTeam,me:myTeam.list[0],enemy:enTeam.list[0],
@@ -1832,6 +1852,15 @@ const TELLS={
  taunt:["フハハ、かかってこい!","まだまだ本気ではないぞ?","その程度か…?","震えて待つがよい!","楽しませてくれるな!","勝負はこれからよ!","覚悟はよいか…!","逃がしはせんぞ!"],
  lowhp:["おのれ、まだ倒れんぞ…!","この程度で終わると思うな!","逆転してくれるわ…!","窮鼠猫を噛む、とな!","土壇場こそ我が本領!"],
  silent:["…………。","………。","……ふっ。","(無言で身構えている)","(じっとこちらを見ている)","(不敵に笑った)"],
+ // ===== Lv11以上の強敵専用セリフ =====
+ // 心を読む(プレイヤーの手を予告する高度な煽り)
+ mind:["うぬの心、読み取ったぞ…","次に出す手が視えておる…","その迷い、こちらには筒抜けだ","逃げ場はない、全て読んでおる","貴様の思考、支配してくれる","運命はもう決まっておるのだ…"],
+ // 覇者の風格(格上を示す圧のあるセリフ)
+ boss:["ここまで来たか…褒めてやろう","真の妖力、味わうがよい","児戯は終わりだ","我を倒せると思うたか?","格の違い、教えてやろう","百鬼夜行の頂、ここにあり!","生半可な覚悟では滅ぶぞ","伝説はここから始まる…"],
+ // 嘲笑(プレッシャーをかける)
+ mock:["ふふ…震えておるな?","その手が精一杯か?","もう打つ手なしか?","絶望はまだ早いぞ?","踊らされておるとも知らずに…","哀れよのう…"],
+ // 追い詰め(こちらのHPが減ったとき)
+ finish:["終わりだ、覚悟せい!","とどめを刺してくれる!","もはやこれまでよ!","散り際だけは見事にな!","地獄で会おうぞ!"],
 };
 const pickA=a=>a[Math.floor(Math.random()*a.length)];
 const counterOf=h=>h==="g"?"p":h==="c"?"g":"c"; // hに勝つ手
@@ -1859,31 +1888,45 @@ function planCpu(){
   // セリフの種類を決める。counter/norepeatは「直前の手」が必要なので1手目は除外
   const hasMyLast=!!B.myLast;   // 自分(プレイヤー)の直前の手
   const hasCpuLast=!!B.cpuLast; // CPU自身の直前の手
-  const lowHp=B.enemy.hp<=B.enemy.maxhp*0.3;
+  const lowHp=B.enemy.hp<=B.enemy.maxhp*0.3;      // CPU自身が瀕死
+  const playerLowHp=B.me&&B.me.hp<=B.me.maxhp*0.35; // プレイヤーが瀕死
+  const ex=lv>=11; // 超高レベル(11〜20)
   // 情報を与えるセリフ(手が読める) vs 与えないセリフ(taunt等)
   const informTypes=["hand","hand","hand"];
   if(lv>=3)informTypes.push("fav");
   if(lv>=4&&hasMyLast)informTypes.push("counter");
   if(lv>=6&&hasCpuLast)informTypes.push("norepeat");
-  const bluffTypes=["taunt"];
+  if(ex&&hasMyLast)informTypes.push("mind"); // 11+:心を読む(手を明かすが超高確率でウソ)
+  const bluffTypes=ex?["boss","mock","taunt"]:["taunt"]; // 11+は覇者・嘲笑セリフ
   if(lowHp)bluffTypes.push("lowhp","lowhp");
+  if(ex&&playerLowHp)bluffTypes.push("finish","finish"); // 11+:プレイヤー瀕死で追い詰めセリフ
   // 低レベルほど素直に手を明かす(=読みやすく勝ちやすい)。高レベルほど煽り・ブラフで手を隠す
-  const informChance=Math.max(.35,.95-lv*.055);
+  const informChance=Math.max(.28,.95-lv*.05);
   const useInform=Math.random()<informChance;
   const ty=useInform?pickA(informTypes):pickA(bluffTypes);
   let hand=null,line;
   if(ty==="hand"){
     hand=Math.random()<.35?B.enemy.fav:pickA(["g","c","p"]);
     let shown=hand;
-    if(lv>=8&&Math.random()<(lv-7)*.15){ // 高レベルはたまにウソをつく
+    if(lv>=8&&Math.random()<(lv-7)*.12){ // 高レベルはたまにウソをつく
       shown=pickA(["g","c","p"].filter(x=>x!==hand));
     }
     line=pickA(TELLS.hand[shown]);
+  }else if(ty==="mind"){
+    // 心を読む:実際の手を予告するが、超高レベルほど高確率でウソ(心理戦)
+    hand=Math.random()<.4?B.enemy.fav:pickA(["g","c","p"]);
+    let shown=hand;
+    if(Math.random()<Math.min(.6,(lv-10)*.08)){ // Lv11で8%〜Lv20で60%がウソ
+      shown=pickA(["g","c","p"].filter(x=>x!==hand));
+    }
+    // mindセリフに手のヒントを添える(プレイヤーには真偽が分からない)
+    line=pickA(TELLS.mind)+" 次は"+HANDNAME[shown]+"…";
   }else if(ty==="fav"){hand=B.enemy.fav;line=pickA(TELLS.fav)}
   else if(ty==="counter"){hand=counterOf(B.myLast);line=pickA(TELLS.counter)}
   else if(ty==="norepeat"){hand=pickA(["g","c","p"].filter(x=>x!==B.cpuLast));line=pickA(TELLS.norepeat)}
-  else{ // taunt / lowhp は手を明かさない煽りセリフ
-    line=pickA(ty==="lowhp"?TELLS.lowhp:TELLS.taunt);
+  else{ // taunt / lowhp / boss / mock / finish は手を明かさない煽りセリフ
+    const pool=TELLS[ty]||TELLS.taunt;
+    line=pickA(pool);
     B.cpuPlan = foreseeing ? cpuChoose() : null; // 見切り中は煽りでも手を見せる
     showTell(line);updateForesee();return;
   }
