@@ -526,6 +526,10 @@ input.txt{width:100%;background:#1a1330;border:2px solid #56417f;border-radius:1
     <p class="note">先頭から順に出撃!倒れたら次の妖怪と交代する。<b style="color:var(--onibi)">同じ地方の妖怪を2体以上そろえると「地縁ボーナス」で全員強化!</b></p>
     <div id="team-slots" class="team-slots"></div>
     <div id="team-bonus" class="team-bonus"></div>
+    <div class="sortrow" style="display:flex;gap:8px;justify-content:center;margin:10px 0 4px">
+      <button class="sortbtn on" id="selsort-rar" onclick="setSelSort('rar')">レア度順</button>
+      <button class="sortbtn" id="selsort-pref" onclick="setSelSort('pref')">都道府県順</button>
+    </div>
     <div class="cardgrid" id="sel-chars"></div>
     <h2 class="sect mincho" style="margin-top:18px"><span class="iph" data-i="scroll" data-s="24"></span> 技カードをセット(全員共通)</h2>
     <p class="note">各手にセットした技カードのぶん、その手で戦うとき強くなる。チーム全員に適用される。</p>
@@ -1608,7 +1612,14 @@ function openSelect(){
   renderTeamSlots();
   const grid=document.getElementById("sel-chars");grid.innerHTML="";
   const pickedRegions=selTeam.map(t=>regionOf(t.id));
-  YOKAI.forEach(y=>{
+  // ソート順に妖怪を並べる(レア度順 or 都道府県順)
+  const rarOrder={MR:0,SR:1,R:2,N:3};
+  const sortedY=[...YOKAI].filter(y=>save.cards[y.id]).sort((a,b)=>{
+    if(selSortMode==="pref")return YOKAI.indexOf(a)-YOKAI.indexOf(b); // YOKAIは都道府県順で定義済み
+    // レア度順(同レア度内は都道府県順)
+    return (rarOrder[a.rar]-rarOrder[b.rar])||(YOKAI.indexOf(a)-YOKAI.indexOf(b));
+  });
+  sortedY.forEach(y=>{
     const o=save.cards[y.id];if(!o)return;
     [["n",false],["g",true]].forEach(([k,gold])=>{
       if(o[k]<=0)return;
@@ -2347,6 +2358,12 @@ function setColSort(m){play("tap");colSortMode=m;
   document.getElementById("sort-rar").classList.toggle("on",m==="rar");
   document.getElementById("sort-pref").classList.toggle("on",m==="pref");
   colTab("yokai");
+}
+let selSortMode="rar";
+function setSelSort(m){play("tap");selSortMode=m;
+  document.getElementById("selsort-rar").classList.toggle("on",m==="rar");
+  document.getElementById("selsort-pref").classList.toggle("on",m==="pref");
+  openSelect(); // 並べ替えて再描画
 }
 function colTab(t){
   document.getElementById("tab-yokai").classList.toggle("on",t==="yokai");
